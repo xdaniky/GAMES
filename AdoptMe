@@ -675,7 +675,7 @@ do
         Crash = Options.Cr.Value
     end)
 
-    local Toggle = Tabs.Main:AddToggle("Ne", {Title = "Auto Neon", Default = false})
+    local Toggle = Tabs.Main:AddToggle("Ne", {Title = "Auto Neon ATAU MEGA", Default = false})
     Toggle:OnChanged(function()
         Neon = Options.Ne.Value
     end)
@@ -685,7 +685,7 @@ do
         Key = PetsShow[Value]
     end)
 
-    local Toggle = Tabs.Main:AddToggle("New", {Title = "Auto pet", Default = false})
+    local Toggle = Tabs.Main:AddToggle("New", {Title = "PETSIT MANUAL", Default = false})
     Toggle:OnChanged(function()
         PetFarm = Options.New.Value
     end)
@@ -710,12 +710,12 @@ do
         sp = Value
     end)
 
-    local Toggle = Tabs.Main:AddToggle("New1231", {Title = "Auto use Age Pot", Default = false})
+    local Toggle = Tabs.Main:AddToggle("New1231", {Title = "AUTO LEVEL PET", Default = false})
     Toggle:OnChanged(function()
         Grow = Options.New1231.Value
     end)
 
-    local Dropdown = Tabs.Main:AddDropdown("a", {Title = "Pets Use potion on", Values = List, Multi = false, Default = 1,})
+    local Dropdown = Tabs.Main:AddDropdown("a", {Title = "PET APA YG MAU DI MAX ", Values = List, Multi = false, Default = 1,})
     Dropdown:OnChanged(function(Value)
         Petsc = Value
     end)
