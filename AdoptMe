@@ -18,12 +18,10 @@ local Stores = {
     "School",
     "BabyShop",
     "HotSpringHouse",
-    "SafetyHub",
+    "Trade LISENSI",
     "DebugInterior",
     "VIP",
     "Salon",
-    "SpleefMinigame",
-    "SimonSaysMinigame",
     "WinterCastle"
 }
 
@@ -665,7 +663,7 @@ do
         BabyFarm = Options.no.Value
     end)
 
-    local Toggle = Tabs.Main2:AddToggle("CPU", {Title = "LowCpu render", Default = false})
+    local Toggle = Tabs.Main2:AddToggle("CPU", {Title = "SPEK KENTANG", Default = false})
     Toggle:OnChanged(function()
         Render = Options.CPU.Value
     end)
@@ -690,22 +688,22 @@ do
         PetFarm = Options.New.Value
     end)
 
-    local Toggle = Tabs.Main:AddToggle("New1", {Title = "SwitchOutFullyGrown", Default = false})
+    local Toggle = Tabs.Main:AddToggle("New1", {Title = "AUto Ganti Pet", Default = false})
     Toggle:OnChanged(function()
         SwitchOutFullyGrown = Options.New1.Value
     end)
 
-    local Toggle = Tabs.Main:AddToggle("New12", {Title = "SwitchOutEgg", Default = false})
+    local Toggle = Tabs.Main:AddToggle("New12", {Title = "Ganti Telor", Default = false})
     Toggle:OnChanged(function()
         SwitchOutEgg = Options.New12.Value
     end)
 
-    local Toggle = Tabs.Main:AddToggle("New123", {Title = "Switch Out same Pet Species", Default = false})
+    local Toggle = Tabs.Main:AddToggle("New123", {Title = "GANTI PET 1 JENIS", Default = false})
     Toggle:OnChanged(function()
         True = Options.New123.Value
     end)
 
-    local Dropdown = Tabs.Main:AddDropdown("s", {Title = "Pets Species",Values = JoJo,Multi = false,Default = 1,})
+    local Dropdown = Tabs.Main:AddDropdown("s", {Title = "Pets APA",Values = JoJo,Multi = false,Default = 1,})
     Dropdown:OnChanged(function(Value)
         sp = Value
     end)
@@ -720,7 +718,7 @@ do
         Petsc = Value
     end)
 
-    local Toggle = Tabs.Main:AddToggle("Hi", {Title = "Healing Aura", Default = false})
+    local Toggle = Tabs.Main:AddToggle("Hi", {Title = "Auto Heal", Default = false})
     Toggle:OnChanged(function()
         HealOthers = Options.Hi.Value
     end)
