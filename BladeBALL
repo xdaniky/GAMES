@@ -1,4 +1,4 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/xdaniky/Xdaniky-HUB/main/SCRIPT"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/xdaniky/Xdaniky-HUB/main/NAME"))()
 VG.DisableConnection(Error)
 VG.DisableConnection(Idled)
 local OldNameCall = nil
