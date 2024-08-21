@@ -171,7 +171,7 @@ local Options = Fluent.Options
 
 do
     Fluent:Notify({
-        Title = "V.G Hub Loaded",
+        Title = "Xdaniky Hub Loaded",
         Content = "Congrats your using V.G Hub " .. Verison,
         SubContent = "", -- Optional
         Duration = 10 -- Set to nil to make the notification not disappear
@@ -230,7 +230,7 @@ SaveManager:BuildConfigSection(Tabs.Settings)
 Window:SelectTab(1)
 
 Fluent:Notify({
-    Title = "V.G Hub",
+    Title = "Xdaniky Hub",
     Content = "The script has been loaded.",
     Duration = 8
 })
