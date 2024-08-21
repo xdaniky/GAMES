@@ -1,3 +1,4 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/CeleryHub/CeleryHub/main/OnlyCelery.lua"))()
 local Stats = game:GetService('Stats')
 
 local Players = game:GetService('Players')
