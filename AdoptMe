@@ -16,7 +16,14 @@ local Stores = {
     "BabyShop",
     "TradingLicense",
     "VIP",
-    "Salon",
+    "Salon"
+    
+
+
+
+
+
+
 
 }
 
@@ -26,7 +33,7 @@ local Baths = {
     "ModernShower",
     "Bathtub",
     "GingerbreadShower",
-    "HotTub",
+    "HotTub"
 }
 
 local FreeFoods = {
@@ -68,17 +75,17 @@ local Eggs = {
     "cracked_egg",
     "regular_pet_egg",
     "royal_egg",
-    "retired_egg",
-    "seasia_2023_egg",
-    "mythic_egg",
-    "japan_2022_egg",
-    "danger_2023_egg",
+
+
+
+
+
 }
 
 local gifts = {
     "smallgift",
     "biggift",
-    "massivegift",
+    "massivegift"
 }
 local Obbys = {
     "miniworld",
@@ -87,12 +94,12 @@ local Obbys = {
     "ancient_ruins",
     "lonelypeak",
     "pyramid",
-    "tinyisles",
+    "tinyisles"
 }
 
 local RetardedBullShit = {
     "CashRegister",
-    "GoldenCashRegister",
+    "GoldenCashRegister"
 }
 
 local Tick = tick()
