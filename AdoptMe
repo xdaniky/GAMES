@@ -4,27 +4,20 @@ local Stores = {
     "PizzaShop",
     "ToyShop",
     "Obbies",
-    "Neighborhood",
     "CampingShop",
-    "AutoShop",
+    "VehicleShop",
     "Nursery",
     "Cave",
     "IceCream",
-    "PotionShop",
     "SkyCastle",
     "Hospital",
     "HatShop",
     "PetShop",
     "School",
     "BabyShop",
-    "HotSpringHouse",
-    "SafetyHub",
-    "DebugInterior",
+    "TradeLicense",
     "VIP",
-    "Salon",
-    "SpleefMinigame",
-    "SimonSaysMinigame",
-    "WinterCastle"
+    "Salon"
 }
 
 local Baths = {
@@ -75,19 +68,13 @@ local Eggs = {
     "cracked_egg",
     "regular_pet_egg",
     "royal_egg",
-    "retired_egg",
-    "seasia_2023_egg",
-    "mythic_egg",
-    "japan_2022_egg",
-    "danger_2023_egg",
+    "garden_egg"
 }
 
 local gifts = {
-    "smallgift",
-    "biggift",
-    "massivegift",
-    "legend_hat_2022_simple_chest",
-    "legend_hat_2022_regal_chest"
+    "Small_Gift",
+    "big_gift",
+    "massive_gift"
 }
 local Obbys = {
     "miniworld",
@@ -648,7 +635,7 @@ local Tabs = {
     Main = Window:AddTab({ Title = "Main", Icon = "" }),
     Main2 = Window:AddTab({ Title = "Misc", Icon = "" }),
     Main3 = Window:AddTab({ Title = "Teleports", Icon = "" }),
-    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+    Settings = Window:AddTab({ Title = "Settings Gui", Icon = "settings" })
 }
 
 local Options = Fluent.Options
@@ -780,7 +767,7 @@ do
         end)
     end})
 
-    local Dropdown = Tabs.Main3:AddDropdown("s", {Title = "Stores",Values = Stores,Multi = false,Default = 1,})
+    local Dropdown = Tabs.Main3:AddDropdown("s", {Title = "Places",Values = Places,Multi = false,Default = 1,})
     Dropdown:OnChanged(function(Value)
         Ass = Value
     end)
