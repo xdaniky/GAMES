@@ -1,4 +1,3 @@
-
 local Stores = {
     "CoffeeShop",
     "Supermarket",
@@ -76,10 +75,11 @@ local Eggs = {
     "cracked_egg",
     "regular_pet_egg",
     "royal_egg",
-    "retired_egg",
 
 
-    
+
+
+
 }
 
 local gifts = {
@@ -721,14 +721,6 @@ do
     local Toggle = Tabs.Main:AddToggle("Hi", {Title = "Healing Aura", Default = false})
     Toggle:OnChanged(function()
         HealOthers = Options.Hi.Value
-    end)
-
-    local Toggle = Tabs.Main2:AddToggle("Hi1", {Title = "Anti Pick Up", Default = false})
-    Toggle:OnChanged(function()
-        local VirtualUser = game:service'VirtualUser'
-        game:service'Players'.LocalPlayer.Idled:connect(function()
-        VirtualUser:CaptureController()
-        VirtualUser:ClickButton2(Vector2.new())
     end)
 
     local Toggle = Tabs.Main2:AddToggle("Hi1", {Title = "Anti Pick Up", Default = false})
