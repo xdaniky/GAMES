@@ -4,27 +4,27 @@ local Stores = {
     "PizzaShop",
     "ToyShop",
     "Obbies",
+    "Neighborhood",
     "CampingShop",
     "AutoShop",
     "Nursery",
     "Cave",
     "IceCream",
+    "PotionShop",
+    "SkyCastle",
     "Hospital",
     "HatShop",
     "PetShop",
     "School",
     "BabyShop",
-    "TradingLicense",
+    "HotSpringHouse",
+    "SafetyHub",
+    "DebugInterior",
     "VIP",
     "Salon",
-
-
-
-
-
-    
-    
-    
+    "SpleefMinigame",
+    "SimonSaysMinigame",
+    "WinterCastle"
 }
 
 local Baths = {
@@ -68,24 +68,26 @@ local Tasks = {
     "pool_party",
     "salon",
     "pizza_party",
-    "beach_party",
+    "beach_party"
 }
 
 local Eggs = {
     "cracked_egg",
     "regular_pet_egg",
     "royal_egg",
-
-
-
-
-
+    "retired_egg",
+    "seasia_2023_egg",
+    "mythic_egg",
+    "japan_2022_egg",
+    "danger_2023_egg",
 }
 
 local gifts = {
     "smallgift",
     "biggift",
-    "massivegift"
+    "massivegift",
+    "legend_hat_2022_simple_chest",
+    "legend_hat_2022_regal_chest"
 }
 local Obbys = {
     "miniworld",
@@ -632,12 +634,12 @@ local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/d
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Xdanikyy: Game " .. MarketplaceService:GetProductInfo(game.PlaceId).Name,
-    SubTitle = "by Danii",
+    Title = "Xdaniky Hub: Game " .. MarketplaceService:GetProductInfo(game.PlaceId).Name,
+    SubTitle = "by Xdaniky",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = false, -- The blur may be detectable, setting this to false disables blur entirely
-    Theme = "White",
+    Theme = "Dark",
     MinimizeKey = Enum.KeyCode.Delete -- Used when theres no MinimizeKeybind
 })
 
@@ -653,8 +655,8 @@ local Options = Fluent.Options
 
 do
     Fluent:Notify({
-        Title = "Xdanikyy Hub Loaded",
-        Content = "Congrats your using Xdanikyy Cheat " .. Verison,
+        Title = "Xdaniky Hub Loaded",
+        Content = "Congrats your using Xdaniky Hub " .. Verison,
         SubContent = "", -- Optional
         Duration = 10 -- Set to nil to make the notification not disappear
     })
@@ -673,7 +675,7 @@ do
         Crash = Options.Cr.Value
     end)
 
-    local Toggle = Tabs.Main:AddToggle("Ne", {Title = "Auto Neon ATAU MEGA", Default = false})
+    local Toggle = Tabs.Main:AddToggle("Ne", {Title = "Auto Neon", Default = false})
     Toggle:OnChanged(function()
         Neon = Options.Ne.Value
     end)
@@ -683,7 +685,7 @@ do
         Key = PetsShow[Value]
     end)
 
-    local Toggle = Tabs.Main:AddToggle("New", {Title = "PETSIT MANUAL", Default = false})
+    local Toggle = Tabs.Main:AddToggle("New", {Title = "Petsit", Default = false})
     Toggle:OnChanged(function()
         PetFarm = Options.New.Value
     end)
@@ -708,12 +710,12 @@ do
         sp = Value
     end)
 
-    local Toggle = Tabs.Main:AddToggle("New1231", {Title = "AUTO LEVEL PET", Default = false})
+    local Toggle = Tabs.Main:AddToggle("New1231", {Title = "Auto use Age Pot", Default = false})
     Toggle:OnChanged(function()
         Grow = Options.New1231.Value
     end)
 
-    local Dropdown = Tabs.Main:AddDropdown("a", {Title = "PET APA YG MAU DI MAX ", Values = List, Multi = false, Default = 1,})
+    local Dropdown = Tabs.Main:AddDropdown("a", {Title = "Pets Use potion on", Values = List, Multi = false, Default = 1,})
     Dropdown:OnChanged(function(Value)
         Petsc = Value
     end)
@@ -750,7 +752,7 @@ do
 
     local Dropdown = Tabs.Main2:AddDropdown("a132", {Title = "Gifts",Values = gifts,Multi = false,Default = 1})
     Dropdown:OnChanged(function(Value)
-        gifts = Value
+        Gift = Value
     end)
 
     local Toggle = Tabs.Main2:AddToggle("Hi3", {Title = "Auto Open Gifts", Default = false})
@@ -769,7 +771,7 @@ do
         end 
     end})
 
-    Tabs.Main3:AddButton({Title = "Go Place",Description = "Goes to selected Place",Callback = function()
+    Tabs.Main3:AddButton({Title = "Go To Store",Description = "Goes to selected store",Callback = function()
         spawn(function()
             pcall(function()
                 GoToStore(Ass)
@@ -811,7 +813,7 @@ SaveManager:BuildConfigSection(Tabs.Main)
 Window:SelectTab(1)
 
 Fluent:Notify({
-    Title = "Xdaniky HUB ",
+    Title = "Xdaniky Hub",
     Content = "The script has been loaded.",
     Duration = 8
 })
