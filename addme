@@ -7,18 +7,17 @@ getgenv().VO_CONFIG = {
     PotFarm = true,
     EggFarm = false,
     PetFarm = false, -- Third mode: farm pets from PetFarmList in order (natural task-aging)
+    EggBuy = true, -- If true (default): buy an egg when none in inventory. If false: no target eggs -> switch to PotFarm
     KeepEggFarm = false, -- If true, will keep trying to hatch eggs even when no bucks
     KeepPetFarm = false, -- If true, will switch back when PetFarmList targets appear
     EggName = {"Egg Name"},  -- Priority order: first egg tried, then second, etc.
     PetFarmList = {}, -- Ordered pet names: age all non-FG of first name, then second, etc.; fallback if none available
-    PrioritizePet = "",
+    PrioritizePet = "2D Kitty",
 
     -- === HALLOWEEN 2026 EVENT ===
-    AutoCandyCornPile = true,        -- Claim the Candy Corn Pile (requires the 1.25x Candy Multiplier gamepass)
-    AutoFeedStrayCat = true,         -- Feed the Stray Cat once per day/night cycle (uses any normal food)
-    AutoCryptCoffins = true,         -- Rusty Keys on ladder coffins + Mummy Spider (also twig coffins until the nest is done)
-    AutoPigeonNest = true,           -- Put Crypt Twigs into the Haunted Hotel nest (unlocks the Jacobin Pigeon)
-    GhostClustersMinigame = true,    -- Ghost Gallery minigame (farm tasks are fully paused while it runs)
+    AutoCandyCornPile = false,        -- Claim the Candy Corn Pile (requires the 1.25x Candy Multiplier gamepass)
+    GhostClustersMinigame = false,    -- Ghost Gallery minigame (farm tasks are fully paused while it runs)
+    HauntletMinigame = true,          -- Hauntlet 2 door-picking minigame (on unless set to false; farm tasks pause while it runs)
 
     -- === PET PEN ===
     PetPen = false,
