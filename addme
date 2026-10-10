@@ -7,7 +7,7 @@ getgenv().VO_CONFIG = {
     PotFarm = true,
     EggFarm = false,
     PetFarm = false, -- Third mode: farm pets from PetFarmList in order (natural task-aging)
-    EggBuy = true, -- If true (default): buy an egg when none in inventory. If false: no target eggs -> switch to PotFarm
+    EggBuy = false, -- If true (default): buy an egg when none in inventory. If false: no target eggs -> switch to PotFarm
     KeepEggFarm = false, -- If true, will keep trying to hatch eggs even when no bucks
     KeepPetFarm = false, -- If true, will switch back when PetFarmList targets appear
     EggName = {"Egg Name"},  -- Priority order: first egg tried, then second, etc.
@@ -16,7 +16,7 @@ getgenv().VO_CONFIG = {
 
     -- === HALLOWEEN 2026 EVENT ===
     AutoCandyCornPile = false,        -- Claim the Candy Corn Pile (requires the 1.25x Candy Multiplier gamepass)
-    GhostClustersMinigame = false,    -- Ghost Gallery minigame (farm tasks are fully paused while it runs)
+    GhostClustersMinigame = true,    -- Ghost Gallery minigame (farm tasks are fully paused while it runs)
     HauntletMinigame = true,          -- Hauntlet 2 door-picking minigame (on unless set to false; farm tasks pause while it runs)
 
     -- === PET PEN ===
