@@ -1,6 +1,6 @@
 getgenv().VO_CONFIG = {
     -- === HUB / AUTH ===
-    HubKey = "Zu-U3zUGsM4kYw_PYjhll86OXtCQHWDmehl5LFnVxXg",
+    HubKey = "nruKK3l-5HB5laqSFjkpnbTJo6QGkj6C720iHqvoYTA",
     DeviceName = "",
 
     -- === MAIN FARM (choose one mode) ===
