@@ -16,7 +16,7 @@ getgenv().VO_CONFIG = {
     PrioritizePet = "",
 
     -- === HALLOWEEN 2026 EVENT ===
-    AutoCandyCornPile = false,        -- Claim the Candy Corn Pile (requires the 1.25x Candy Multiplier gamepass)
+    AutoCandyCornPile = true,        -- Claim the Candy Corn Pile (requires the 1.25x Candy Multiplier gamepass)
     GhostClustersMinigame = true,     -- Ghost Gallery minigame (on unless set to false; farm tasks pause while it runs; drops Crypt Keys)
     HauntletMinigame = true,          -- Hauntlet 2 door-picking minigame (on unless set to false; farm tasks pause while it runs)
     SpotlightMinigame = true,         -- Spotlight circus candy corn minigame (on unless set to false; farm tasks pause while it runs)
