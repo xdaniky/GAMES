@@ -15,12 +15,6 @@ getgenv().VO_CONFIG = {
     Farm2DEvent = true,
     PrioritizePet = "",
 
-    -- === HALLOWEEN 2026 EVENT ===
-    AutoCandyCornPile = true,        -- Claim the Candy Corn Pile (requires the 1.25x Candy Multiplier gamepass)
-    GhostClustersMinigame = true,     -- Ghost Gallery minigame (on unless set to false; farm tasks pause while it runs; drops Crypt Keys)
-    HauntletMinigame = true,          -- Hauntlet 2 door-picking minigame (on unless set to false; farm tasks pause while it runs)
-    SpotlightMinigame = true,         -- Spotlight circus candy corn minigame (on unless set to false; farm tasks pause while it runs)
-
     -- === PET PEN ===
     PetPen = false,
     CustomPenEggs = {"Egg Name"},
@@ -58,7 +52,8 @@ getgenv().VO_CONFIG = {
     OpenBoxes = {"Box Name"}, -- Box names to open from inventory
 
     -- === LURE ===
-    BaitName = "Bait Name",
+    BaitName = "Bait Name", -- "Storm Chip Cookie Bait" or "Cyclone Sponge Bait"
+    LightningFarm = true,
 
     -- === AUTO TRADE ===
     AutoTrade = false,
@@ -71,7 +66,7 @@ getgenv().VO_CONFIG = {
     -- === CASH TRANSFER ===
     CashTransfer = false,
     TransferMethods = {"mannequin"},  -- Current Methods: "mannequin"
-    TransferAccount = "",
+    TransferAccount = "",  -- Receiver username. Same config on both accounts: that account lists a mannequin, the others send. Same server.
 
     -- === DISCORD WEBHOOK ===
     WebhookEnabled = false,
