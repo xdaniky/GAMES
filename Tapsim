@@ -3,14 +3,10 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Create Main Window
 local Window = Rayfield:CreateWindow({
-   Name = "Auto Clicker",
-   LoadingTitle = "Loading Script...",
-   LoadingSubtitle = "Minimalist UI",
-   ConfigurationSaving = {
-      Enabled = false,
-      FolderName = nil,
-      FileName = "AutoTapConfig"
-   },
+   Name = "Auto Clicker Debug",
+   LoadingTitle = "Loading...",
+   LoadingSubtitle = "Diagnostic Mode",
+   ConfigurationSaving = { Enabled = false },
    KeySystem = false,
 })
 
@@ -20,26 +16,46 @@ local MainTab = Window:CreateTab("Main", "mouse-pointer")
 -- Auto Click Variables
 getgenv().AutoClicking = false
 local ClickDelay = 0.1
+local clickCount = 0
 
--- Remote Tap Function
+-- Remote Tap Function with Debug Prints
 local function SendTap()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local success, err = pcall(function()
-        local Event = ReplicatedStorage.RemoteServices.TapService.RE.TapRequested
-        Event:FireServer({
-            ClientSequence = 2,
-            Auto = false,
-            Source = "screen"
-        })
-    end)
-    if not success then
-        warn("Tap request failed: " .. tostring(err))
+    
+    -- Safely locate the remote event
+    local remoteFolder = ReplicatedStorage:FindFirstChild("RemoteServices")
+    if remoteFolder then
+        local tapService = remoteFolder:FindFirstChild("TapService")
+        if tapService then
+            local re = tapService:FindFirstChild("RE")
+            if re then
+                local event = re:FindFirstChild("TapRequested")
+                if event then
+                    clickCount = clickCount + 1
+                    local success, err = pcall(function()
+                        event:FireServer({
+                            ClientSequence = clickCount, -- Dynamic sequence in case the game checks it
+                            Auto = false,
+                            Source = "screen"
+                        })
+                    end)
+                    if not success then
+                        warn("FireServer error: " + tostring(err))
+                    else
+                        print("Successfully fired tap #" .. clickCount)
+                    end
+                    return
+                end
+            end
+        end
     end
+    
+    warn("Remote path not found! Check if the game updated its structure.")
 end
 
 -- Auto Click Toggle
 MainTab:CreateToggle({
-   Name = "Auto Click",
+   Name = "Auto Click (Debug)",
    CurrentValue = false,
    Flag = "AutoClickToggle",
    Callback = function(Value)
@@ -53,17 +69,15 @@ MainTab:CreateToggle({
             end
          end)
          Rayfield:Notify({
-            Title = "Auto Click",
-            Content = "Auto Click Enabled",
+            Title = "Status",
+            Content = "Auto Click Started",
             Duration = 2,
-            Image = 4483362458,
          })
       else
          Rayfield:Notify({
-            Title = "Auto Click",
-            Content = "Auto Click Disabled",
+            Title = "Status",
+            Content = "Auto Click Stopped",
             Duration = 2,
-            Image = 4483362458,
          })
       end
    end,
@@ -84,8 +98,7 @@ MainTab:CreateSlider({
 
 -- Loaded Notification
 Rayfield:Notify({
-   Title = "Script Loaded",
-   Content = "Minimalist Rayfield UI is ready.",
+   Title = "Loaded",
+   Content = "Check F9 console if clicks don't register.",
    Duration = 3,
-   Image = 4483362458,
 })
