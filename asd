@@ -14,7 +14,7 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false,
 })
 
--- Create Tabs (Auto Click dikembalikan!)
+-- Create Tabs (Tab Auto Click, Egg Farm, dan Settings)
 local ClickerTab = Window:CreateTab("Auto Click", "mouse-pointer")
 local FarmTab = Window:CreateTab("Egg Farm", "egg")
 local SettingsTab = Window:CreateTab("Settings", "settings")
@@ -39,10 +39,10 @@ local eggObjects = {}
 -- 1. Auto Click Function (Tap Service)
 local function SendTap()
     pcall(function()
-        local remoteFolder = ReplicatedStorage:FindFirstChild("RemoteServices")
-        local tapService = remoteFolder and remoteFolder:FindFirstChild("TapService")
-        local reFolder = tapService and tapService:FindFirstChild("RE")
-        local tapEvent = reFolder and reFolder:FindFirstChild("TapRequested")
+        local remoteFolder = ReplicatedStorage:WaitForChild("RemoteServices", 5)
+        local tapService = remoteFolder and remoteFolder:WaitForChild("TapService", 5)
+        local reFolder = tapService and tapService:WaitForChild("RE", 5)
+        local tapEvent = reFolder and reFolder:WaitForChild("TapRequested", 5)
         
         if tapEvent then
             clientSequenceCounter = clientSequenceCounter + 1
@@ -98,7 +98,7 @@ task.spawn(function()
             pcall(function()
                 local targetEgg = eggObjects[getgenv().SelectedEgg]
                 if targetEgg then
-                    -- A. Cari bagian untuk Teleport (Part "2", "Egg", atau posisi tengah model)
+                    -- A. Cari bagian untuk Teleport
                     local targetCFrame = nil
                     local part2 = targetEgg:FindFirstChild("2")
                     local eggModel = targetEgg:FindFirstChild("Egg")
@@ -124,8 +124,7 @@ task.spawn(function()
                         character.HumanoidRootPart.CFrame = targetCFrame + Vector3.new(0, 3, 2)
                     end
 
-                    -- B. Eksekusi Pembelian Telur (Multi-metode: Prompt + Tombol E + Remote)
-                    -- Metode 1: Trigger ProximityPrompt jika ada di sekitar telur
+                    -- B. Eksekusi Pembelian Telur
                     for _, desc in ipairs(targetEgg:GetDescendants()) do
                         if desc:IsA("ProximityPrompt") then
                             if fireproximityprompt then
@@ -134,32 +133,9 @@ task.spawn(function()
                         end
                     end
 
-                    -- Metode 2: Simulasi tekan tombol E (karena UI game menampilkan tombol E)
                     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
                     task.wait(0.05)
                     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-
-                    -- Metode 3: Tembak Remote EggService jika tersedia
-                    local remoteServices = ReplicatedStorage:FindFirstChild("RemoteServices")
-                    if remoteServices then
-                        for _, service in ipairs(remoteServices:GetChildren()) do
-                            if string.find(service.Name:lower(), "egg") or string.find(service.Name:lower(), "hatch") then
-                                local re = service:FindFirstChild("RE") or service:FindFirstChild("RF")
-                                if re then
-                                    for _, remote in ipairs(re:GetChildren()) do
-                                        if remote:IsA("RemoteEvent") then
-                                            remote:FireServer(getgenv().SelectedEgg, 1)
-                                            remote:FireServer({Egg = getgenv().SelectedEgg, Amount = 1})
-                                        elseif remote:IsA("RemoteFunction") then
-                                            task.spawn(function()
-                                                pcall(function() remote:InvokeServer(getgenv().SelectedEgg, 1) end)
-                                            end)
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
                 end
             end)
         end
@@ -168,7 +144,7 @@ task.spawn(function()
 end)
 
 -- UI COMPONENTS --
--- Tab 1: Auto Click
+-- Tab 1: Auto Click (KEMBALI DISEDIAKAN)
 ClickerTab:CreateToggle({
    Name = "Auto Click",
    CurrentValue = false,
@@ -198,7 +174,6 @@ local EggDropdown = FarmTab:CreateDropdown({
    MultipleOptions = false,
    Flag = "EggDropdown",
    Callback = function(Options)
-      -- Perbaikan bug Rayfield: mengambil string dari dalam tabel Options
       if type(Options) == "table" then
           getgenv().SelectedEgg = Options[1]
       else
