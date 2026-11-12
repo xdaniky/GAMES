@@ -1,26 +1,68 @@
--- LOADING KAVO UI --
-local selectedTheme = "Sentinel"
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("xdaniky | Heaven Egg Automation", selectedTheme)
+-- Load Rayfield UI Library
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- TABS --
-local EggTab = Window:NewTab("Egg Farm")
-local SettingsTab = Window:NewTab("Settings")
+-- Create Main Window with "Tap Simulator" Subtitle
+local Window = Rayfield:CreateWindow({
+   Name = "xdaniky | Auto Clicker",
+   LoadingTitle = "Loading Tap Simulator...",
+   LoadingSubtitle = "Tap Simulator",
+   ConfigurationSaving = {
+      Enabled = false,
+      FolderName = nil,
+      FileName = "TapSimulatorConfig"
+   },
+   KeySystem = false,
+})
 
--- SECTIONS --
-local FarmSection = EggTab:NewSection("Heaven Egg Features")
-local UISection = SettingsTab:NewSection("UI Settings")
+-- Create Tabs
+local ClickerTab = Window:CreateTab("Auto Click", "mouse-pointer")
+local FarmTab = Window:CreateTab("Egg Farm", "egg")
+local SettingsTab = Window:CreateTab("Settings", "settings")
 
--- VARIABLES --
+-- Services & References
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
+-- Variables
+getgenv().AutoClicking = false
 getgenv().AutoTeleport = false
 getgenv().AutoHatch = false
+local ClickDelay = 0.1
+local clientSequenceCounter = 2
 
--- TELEPORT LOOP --
+-- 1. Auto Click Function (Tap Service)
+local function SendTap()
+    local success, err = pcall(function()
+        local remoteFolder = ReplicatedStorage:WaitForChild("RemoteServices", 5)
+        local tapService = remoteFolder and remoteFolder:WaitForChild("TapService", 5)
+        local reFolder = tapService and tapService:WaitForChild("RE", 5)
+        local tapEvent = reFolder and reFolder:WaitForChild("TapRequested", 5)
+        
+        if tapEvent then
+            clientSequenceCounter = clientSequenceCounter + 1
+            tapEvent:FireServer({
+                ClientSequence = clientSequenceCounter,
+                Auto = false,
+                Source = "screen"
+            })
+        end
+    end)
+end
+
+task.spawn(function()
+    while true do
+        if getgenv().AutoClicking then
+            SendTap()
+            task.wait(ClickDelay)
+        else
+            task.wait(0.1)
+        end
+    end
+end)
+
+-- 2. Teleport Loop Function
 task.spawn(function()
     while true do
         if getgenv().AutoTeleport then
@@ -28,47 +70,4 @@ task.spawn(function()
                 local eggPart = Workspace.Eggs.Heaven["2"]
                 local character = LocalPlayer.Character
                 if eggPart and character and character:FindFirstChild("HumanoidRootPart") then
-                    character.HumanoidRootPart.CFrame = eggPart.CFrame + Vector3.new(0, 3, 0)
-                end
-            end)
-        end
-        task.wait(0.5)
-    end
-end)
-
--- AUTO HATCH LOOP --
-task.spawn(function()
-    while true do
-        if getgenv().AutoHatch then
-            pcall(function()
-                local buyEggRemote = ReplicatedStorage:FindFirstChild("RemoteServices") 
-                    and ReplicatedStorage.RemoteServices:FindFirstChild("EggService") 
-                    and ReplicatedStorage.RemoteServices.EggService:FindFirstChild("RE") 
-                    and ReplicatedStorage.RemoteServices.EggService.RE:FindFirstChild("BuyEgg")
-
-                if buyEggRemote then
-                    buyEggRemote:FireServer("Heaven", 1)
-                end
-            end)
-        end
-        task.wait(0.3)
-    end
-end)
-
--- UI COMPONENTS --
-FarmSection:NewToggle("Auto Teleport to Heaven Egg", "Teleports you directly to the Heaven Egg", function(state)
-    getgenv().AutoTeleport = state
-    print("Auto Teleport: " .. (state and "On" or "Off"))
-end)
-
-FarmSection:NewToggle("Auto Hatch Heaven Egg", "Automatically hatches the Heaven Egg", function(state)
-    getgenv().AutoHatch = state
-    print("Auto Hatch: " .. (state and "On" or "Off"))
-end)
-
-UISection:NewKeybind("Toggle UI", "Keybind to open/close the menu", Enum.KeyCode.Insert, function()
-    Library:ToggleUI()
-end)
-
--- NOTIFICATION
-print("Heaven Egg Automation Script Loaded Successfully!")
+                    character.HumanoidRootPart
