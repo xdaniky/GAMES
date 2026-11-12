@@ -1,0 +1,309 @@
+--// GameSettings (LocalScript) - Recoil Reduction + Teammate Outline + GUI (PC & Mobile)
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local CAS = game:GetService("ContextActionService")
+
+local localPlayer = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+----------------------------------------------------------------
+-- RECOIL
+----------------------------------------------------------------
+local Recoil = {
+    Enabled = false,
+    Vertical = 0,
+    Horizontal = 0,
+    CameraShake = true,
+}
+
+local BASE_VERTICAL = 1.2
+local BASE_HORIZONTAL = 0.4
+
+function Recoil.Apply(vertical, horizontal)
+    if not Recoil.Enabled then
+        return vertical, horizontal
+    end
+    return vertical * Recoil.Vertical, horizontal * Recoil.Horizontal
+end
+
+local function doShake()
+    -- efek camera shake milikmu
+end
+
+local function onFire()
+    local h = (math.random() - 0.5) * 2 * BASE_HORIZONTAL
+    local v, hz = Recoil.Apply(BASE_VERTICAL, h)
+    camera.CFrame *= CFrame.Angles(math.rad(v), math.rad(hz), 0)
+    if Recoil.CameraShake then
+        doShake()
+    end
+    -- kirim tembakan ke server lewat RemoteEvent di sini
+end
+
+-- PC: klik kiri | Mobile: tombol tembak otomatis di layar
+CAS:BindAction("FireWeapon", function(_, state)
+    if state == Enum.UserInputState.Begin then
+        onFire()
+    end
+    return Enum.ContextActionResult.Pass
+end, true, Enum.UserInputType.MouseButton1)
+
+CAS:SetTitle("FireWeapon", "Tembak")
+CAS:SetPosition("FireWeapon", UDim2.new(0.75, 0, 0.55, 0))
+
+----------------------------------------------------------------
+-- TEAMMATE OUTLINE
+----------------------------------------------------------------
+local ESP = {Enabled = false}
+local highlights = {}
+
+local function removeHighlight(player)
+    if highlights[player] then
+        highlights[player]:Destroy()
+        highlights[player] = nil
+    end
+end
+
+local function applyHighlight(player)
+    removeHighlight(player)
+    if not ESP.Enabled or player == localPlayer then return end
+    if not localPlayer.Team or player.Team ~= localPlayer.Team then return end
+
+    local char = player.Character
+    if not char then return end
+
+    local h = Instance.new("Highlight")
+    h.Name = "TeammateOutline"
+    h.FillTransparency = 0.7
+    h.OutlineColor = Color3.fromRGB(0, 255, 120)
+    h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    h.Adornee = char
+    h.Parent = char
+    highlights[player] = h
+end
+
+local function refreshAll()
+    for _, p in ipairs(Players:GetPlayers()) do
+        applyHighlight(p)
+    end
+end
+
+local function track(player)
+    player.CharacterAdded:Connect(function()
+        task.wait(0.1)
+        applyHighlight(player)
+    end)
+    player:GetPropertyChangedSignal("Team"):Connect(function()
+        applyHighlight(player)
+    end)
+    applyHighlight(player)
+end
+
+for _, p in ipairs(Players:GetPlayers()) do track(p) end
+Players.PlayerAdded:Connect(track)
+Players.PlayerRemoving:Connect(removeHighlight)
+localPlayer:GetPropertyChangedSignal("Team"):Connect(refreshAll)
+
+----------------------------------------------------------------
+-- GUI
+----------------------------------------------------------------
+local isMobile = UIS.TouchEnabled and not UIS.KeyboardEnabled
+local scale = isMobile and 1.15 or 1
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "SettingsUI"
+gui.ResetOnSpawn = false
+gui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
+gui.Parent = localPlayer:WaitForChild("PlayerGui")
+
+-- Tombol buka/tutup menu (selalu terlihat)
+local openBtn = Instance.new("TextButton")
+openBtn.Size = UDim2.fromOffset(44 * scale, 44 * scale)
+openBtn.Position = UDim2.new(0, 10, 0, 10)
+openBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+openBtn.Text = "⚙"
+openBtn.TextColor3 = Color3.new(1, 1, 1)
+openBtn.TextSize = 24
+openBtn.Font = Enum.Font.GothamBold
+openBtn.ZIndex = 5
+openBtn.Parent = gui
+Instance.new("UICorner", openBtn).CornerRadius = UDim.new(0, 10)
+
+-- Panel utama
+local frame = Instance.new("Frame")
+frame.Size = UDim2.fromOffset(240 * scale, 320 * scale)
+frame.Position = UDim2.new(0, 10, 0, 64 * scale)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+frame.Visible = false
+frame.Parent = gui
+Instance.new("UICorner", frame)
+
+local limit = Instance.new("UISizeConstraint", frame)
+limit.MaxSize = Vector2.new(300, 420)
+
+-- Title bar (area drag)
+local titleBar = Instance.new("TextLabel")
+titleBar.Size = UDim2.new(1, 0, 0, 36 * scale)
+titleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+titleBar.Text = "Pengaturan (geser di sini)"
+titleBar.TextColor3 = Color3.new(1, 1, 1)
+titleBar.Font = Enum.Font.GothamBold
+titleBar.TextSize = 14
+titleBar.Parent = frame
+Instance.new("UICorner", titleBar)
+
+-- Drag manual (mouse & sentuh)
+do
+    local dragging, dragStart, startPos
+    titleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    UIS.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch) then
+            local d = input.Position - dragStart
+            frame.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + d.X,
+                startPos.Y.Scale, startPos.Y.Offset + d.Y
+            )
+        end
+    end)
+end
+
+-- Container isi
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1, 0, 1, -(40 * scale))
+content.Position = UDim2.fromOffset(0, 40 * scale)
+content.BackgroundTransparency = 1
+content.Parent = frame
+
+local layout = Instance.new("UIListLayout", content)
+layout.Padding = UDim.new(0, 8)
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local order = 0
+local function nextOrder()
+    order += 1
+    return order
+end
+
+local function makeToggle(text, initial, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -20, 0, 36 * scale)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextSize = 14
+    btn.LayoutOrder = nextOrder()
+    btn.Parent = content
+    Instance.new("UICorner", btn)
+
+    local on = initial
+    local function refresh()
+        btn.Text = text .. ": " .. (on and "ON" or "OFF")
+        btn.BackgroundColor3 = on and Color3.fromRGB(40, 140, 80) or Color3.fromRGB(70, 70, 80)
+    end
+    refresh()
+
+    btn.Activated:Connect(function()
+        on = not on
+        refresh()
+        callback(on)
+    end)
+end
+
+local function makeSlider(text, initial, callback)
+    local holder = Instance.new("Frame")
+    holder.Size = UDim2.new(1, -20, 0, 48 * scale)
+    holder.BackgroundTransparency = 1
+    holder.LayoutOrder = nextOrder()
+    holder.Parent = content
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0, 18)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = holder
+
+    local bar = Instance.new("TextButton")
+    bar.AutoButtonColor = false
+    bar.Text = ""
+    bar.Size = UDim2.new(1, 0, 0, 16 * scale)
+    bar.Position = UDim2.new(0, 0, 0, 24 * scale)
+    bar.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+    bar.Parent = holder
+    Instance.new("UICorner", bar).CornerRadius = UDim.new(1, 0)
+
+    local fill = Instance.new("Frame")
+    fill.BackgroundColor3 = Color3.fromRGB(40, 140, 80)
+    fill.BorderSizePixel = 0
+    fill.Parent = bar
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
+
+    local function setValue(v)
+        v = math.clamp(math.floor(v * 100 + 0.5) / 100, 0, 1)
+        fill.Size = UDim2.new(v, 0, 1, 0)
+        label.Text = string.format("%s: %d%%", text, v * 100)
+        callback(v)
+    end
+    setValue(initial)
+
+    local sliding = false
+    local function update(input)
+        local rel = (input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X
+        setValue(rel)
+    end
+
+    bar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            sliding = true
+            update(input)
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    sliding = false
+                end
+            end)
+        end
+    end)
+    UIS.InputChanged:Connect(function(input)
+        if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch) then
+            update(input)
+        end
+    end)
+end
+
+makeToggle("Recoil Reduction", false, function(v) Recoil.Enabled = v end)
+makeSlider("Vertikal", 0, function(n) Recoil.Vertical = n end)
+makeSlider("Horizontal", 0, function(n) Recoil.Horizontal = n end)
+makeToggle("Camera Shake", true, function(v) Recoil.CameraShake = v end)
+makeToggle("Teammate Outline", false, function(v)
+    ESP.Enabled = v
+    refreshAll()
+end)
+
+-- Buka/tutup menu
+openBtn.Activated:Connect(function()
+    frame.Visible = not frame.Visible
+end)
+
+UIS.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        frame.Visible = not frame.Visible
+    end
+end)
