@@ -36,7 +36,7 @@ local clientSequenceCounter = 2
 local eggNames = {}
 local eggObjects = {}
 
--- 1. Auto Click Function (Tap Service)
+-- 1. Auto Click Function (Dikembalikan seperti versi awal yang sukses)
 local function SendTap()
     pcall(function()
         local remoteFolder = ReplicatedStorage:WaitForChild("RemoteServices", 5)
@@ -66,7 +66,7 @@ task.spawn(function()
     end
 end)
 
--- 2. Fungsi Scan Telur Berdasarkan Struktur Workspace.Eggs Anda
+-- 2. Fungsi Scan Telur Berdasarkan Struktur Workspace.Eggs
 local function ScanEggs()
     table.clear(eggNames)
     table.clear(eggObjects)
@@ -74,10 +74,8 @@ local function ScanEggs()
     local eggsFolder = Workspace:FindFirstChild("Eggs")
     if eggsFolder then
         for _, item in ipairs(eggsFolder:GetChildren()) do
-            -- Filter folder/model telur yang valid
             if item:IsA("Folder") or item:IsA("Model") then
                 local name = item.Name
-                -- Pastikan bukan leaderboard/objek lain
                 if name ~= "30M Visits" and (item:FindFirstChild("Egg") or item:FindFirstChild("PriceTag") or item:FindFirstChild("1") or item:FindFirstChild("2")) then
                     table.insert(eggNames, name)
                     eggObjects[name] = item
@@ -96,7 +94,7 @@ end
 
 ScanEggs()
 
--- 3. Sistem 1x Teleport Lalu Buka Telur
+-- 3. Sistem 1x Teleport Lalu Auto Play / Auto Open ("C")
 local lastTeleportedEgg = nil
 
 task.spawn(function()
@@ -105,7 +103,7 @@ task.spawn(function()
             pcall(function()
                 local targetEggFolder = eggObjects[getgenv().SelectedEgg]
                 if targetEggFolder then
-                    -- Jika mengganti pilihan telur, lakukan teleport ulang sekali saja
+                    -- Teleport 1x saja saat mulai atau mengganti telur
                     if lastTeleportedEgg ~= getgenv().SelectedEgg then
                         local tpPart = targetEggFolder:FindFirstChild("2") 
                             or targetEggFolder:FindFirstChild("1") 
@@ -115,11 +113,11 @@ task.spawn(function()
                         if tpPart and tpPart:IsA("BasePart") and character and character:FindFirstChild("HumanoidRootPart") then
                             character.HumanoidRootPart.CFrame = tpPart.CFrame + Vector3.new(0, 3, 0)
                             lastTeleportedEgg = getgenv().SelectedEgg
-                            task.wait(0.5) -- Jeda sejenak setelah teleport
+                            task.wait(0.5)
                         end
                     end
 
-                    -- Eksekusi buka telur (Simulasi tombol E dan ProximityPrompt secara terus-menerus tanpa teleport ulang)
+                    -- Otomatis menekan tombol "C" (Auto Open di game) & ProximityPrompt
                     for _, desc in ipairs(targetEggFolder:GetDescendants()) do
                         if desc:IsA("ProximityPrompt") then
                             if fireproximityprompt then
@@ -128,21 +126,26 @@ task.spawn(function()
                         end
                     end
 
+                    -- Simulasi tombol C untuk mengaktifkan Auto Open
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.C, false, game)
+                    task.wait(0.05)
+                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.C, false, game)
+
+                    -- Cadangan tombol E
                     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
                     task.wait(0.05)
                     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
                 end
             end)
         else
-            -- Reset status teleport jika fitur dimatikan
             lastTeleportedEgg = nil
         end
-        task.wait(0.2)
+        task.wait(0.3)
     end
 end)
 
 -- UI COMPONENTS --
--- Tab 1: Auto Click (Dipastikan selalu muncul di urutan pertama)
+-- Tab 1: Auto Click (Dikembalikan di posisi pertama)
 ClickerTab:CreateToggle({
    Name = "Auto Click",
    CurrentValue = false,
@@ -177,12 +180,12 @@ local EggDropdown = FarmTab:CreateDropdown({
       else
           getgenv().SelectedEgg = Options
       end
-      lastTeleportedEgg = nil -- Reset agar teleport ke telur baru saat diganti
+      lastTeleportedEgg = nil
    end,
 })
 
 FarmTab:CreateToggle({
-   Name = "Auto Hatch (1x Teleport + Spam Open)",
+   Name = "Auto Hatch (Teleport + Auto Open C)",
    CurrentValue = false,
    Flag = "AutoFarmToggle",
    Callback = function(Value)
@@ -220,6 +223,7 @@ SettingsTab:CreateButton({
 -- Initial Notification
 Rayfield:Notify({
    Title = "Xdaniky HUB Loaded",
-   Content = "Auto Click & Smart Egg Farm siap digunakan!",
+   Content = "Auto Click & Auto Open siap digunakan!",
    Duration = 3,
 })
+```[cite: 1, 2, 3, 7]
