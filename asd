@@ -36,7 +36,7 @@ local clientSequenceCounter = 2
 local eggNames = {}
 local eggObjects = {}
 
--- 1. Auto Click Function (Dikembalikan seperti versi awal yang sukses)
+-- 1. Auto Click Function (Tap Service)
 local function SendTap()
     pcall(function()
         local remoteFolder = ReplicatedStorage:WaitForChild("RemoteServices", 5)
@@ -94,7 +94,7 @@ end
 
 ScanEggs()
 
--- 3. Sistem 1x Teleport Lalu Auto Play / Auto Open ("C")
+-- 3. Sistem 1x Teleport Lalu Auto Open (Tombol F)
 local lastTeleportedEgg = nil
 
 task.spawn(function()
@@ -117,7 +117,7 @@ task.spawn(function()
                         end
                     end
 
-                    -- Otomatis menekan tombol "C" (Auto Open di game) & ProximityPrompt
+                    -- Trigger ProximityPrompt jika ada
                     for _, desc in ipairs(targetEggFolder:GetDescendants()) do
                         if desc:IsA("ProximityPrompt") then
                             if fireproximityprompt then
@@ -126,26 +126,21 @@ task.spawn(function()
                         end
                     end
 
-                    -- Simulasi tombol C untuk mengaktifkan Auto Open
-                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.C, false, game)
+                    -- Simulasi menekan tombol "F" secara otomatis untuk membuka/menyalakan Auto Hatch game
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
                     task.wait(0.05)
-                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.C, false, game)
-
-                    -- Cadangan tombol E
-                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-                    task.wait(0.05)
-                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
                 end
             end)
         else
             lastTeleportedEgg = nil
         end
-        task.wait(0.3)
+        task.wait(0.2)
     end
 end)
 
 -- UI COMPONENTS --
--- Tab 1: Auto Click (Dikembalikan di posisi pertama)
+-- Tab 1: Auto Click
 ClickerTab:CreateToggle({
    Name = "Auto Click",
    CurrentValue = false,
@@ -185,7 +180,7 @@ local EggDropdown = FarmTab:CreateDropdown({
 })
 
 FarmTab:CreateToggle({
-   Name = "Auto Hatch (Teleport + Auto Open C)",
+   Name = "Auto Hatch (Teleport + Spam F)",
    CurrentValue = false,
    Flag = "AutoFarmToggle",
    Callback = function(Value)
@@ -223,7 +218,7 @@ SettingsTab:CreateButton({
 -- Initial Notification
 Rayfield:Notify({
    Title = "Xdaniky HUB Loaded",
-   Content = "Auto Click & Auto Open siap digunakan!",
+   Content = "Auto Click & Auto Hatch (F) siap digunakan!",
    Duration = 3,
 })
-```[cite: 1, 2, 3, 7]
+```[cite: 1, 2, 3, 7, 8]
