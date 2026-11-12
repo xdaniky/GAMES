@@ -1,6 +1,5 @@
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
-local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -12,6 +11,7 @@ end
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MinimalAutoClicker"
 screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
 screenGui.Parent = playerGui
 
 local mainFrame = Instance.new("Frame")
@@ -46,6 +46,7 @@ toggleButton.Font = Enum.Font.GothamMedium
 toggleButton.Text = "Status: OFF"
 toggleButton.TextColor3 = Color3.fromRGB(180, 180, 180)
 toggleButton.TextSize = 13
+toggleButton.ZIndex = 2
 toggleButton.Parent = mainFrame
 
 local btnCorner = Instance.new("UICorner")
