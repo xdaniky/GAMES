@@ -1,70 +1,213 @@
--- Load Orion Library dengan pengaman error agar tidak mentok di loadstring
-local success, OrionLib = pcall(function()
-    return loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Orion/main/source'))()
-end)
-
-if not success or not OrionLib then
-    warn("Gagal memuat Orion Library! Cek koneksi internet Anda.")
-    return
-end
-
--- Membuat Window Utama Xdaniky HUB
-local Window = OrionLib:MakeWindow({
-    Name = "Xdaniky HUB : Tap Simulator",
-    HidePremium = false,
-    SaveConfig = true,
-    ConfigFolder = "XdanikyTapSim",
-    IntroEnabled = true,
-    IntroText = "Xdaniky HUB Loading...",
-    IntroIcon = "rbxassetid://6031094678"
-})
-
--- Services & References
+-- Xdaniky HUB : Tap Simulator (Clean UI - Zero Loadstring / No Network Error)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
--- Variables
+-- Hapus UI lama jika ada
+if CoreGui:FindFirstChild("XdanikyHubClean") then
+    CoreGui.XdanikyHubClean:Destroy()
+end
+
+-- ScreenGui Utama
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "XdanikyHubClean"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Main Window (Gaya Modern Gelap ala Rayfield)
+local MainFrame = Instance.new("Frame")
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 28)
+MainFrame.Position = UDim2.new(0.5, -225, 0.5, -160)
+MainFrame.Size = UDim2.new(0, 450, 0, 340)
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.Parent = MainFrame
+
+-- Top Bar / Header
+local TopBar = Instance.new("Frame")
+TopBar.Parent = MainFrame
+TopBar.BackgroundColor3 = Color3.fromRGB(32, 32, 38)
+TopBar.Size = UDim2.new(1, 0, 0, 40)
+
+local TopCorner = Instance.new("UICorner")
+TopCorner.CornerRadius = UDim.new(0, 8)
+TopCorner.Parent = TopBar
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Parent = TopBar
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Position = UDim2.new(0, 15, 0, 0)
+TitleLabel.Size = UDim2.new(0, 300, 1, 0)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.Text = "Xdaniky HUB : Tap Simulator"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 15
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Tombol Tutup (X)
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Parent = TopBar
+CloseBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+CloseBtn.Position = UDim2.new(1, -35, 0.5, -12)
+CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 12
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 6)
+CloseCorner.Parent = CloseBtn
+
+-- Sidebar (Menu Tab di Kiri ala Rayfield)
+local Sidebar = Instance.new("ScrollingFrame")
+Sidebar.Parent = MainFrame
+Sidebar.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
+Sidebar.Position = UDim2.new(0, 0, 0, 40)
+Sidebar.Size = UDim2.new(0, 130, 1, -40)
+Sidebar.CanvasSize = UDim2.new(0, 0, 0, 0)
+Sidebar.ScrollBarThickness = 2
+Sidebar.BorderSizePixel = 0
+
+local SidebarLayout = Instance.new("UIListLayout")
+SidebarLayout.Parent = Sidebar
+SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+SidebarLayout.Padding = UDim.new(0, 5)
+
+-- Container Konten di Kanan
+local ContentContainer = Instance.new("Frame")
+ContentContainer.Parent = MainFrame
+ContentContainer.BackgroundTransparency = 1
+ContentContainer.Position = UDim2.new(0, 140, 0, 50)
+ContentContainer.Size = UDim2.new(1, -150, 1, -60)
+
+-- Fungsi Pembuat Tab
+local tabs = {}
+local function CreateTab(tabName)
+    local TabFrame = Instance.new("ScrollingFrame")
+    TabFrame.Parent = ContentContainer
+    TabFrame.BackgroundTransparency = 1
+    TabFrame.Size = UDim2.new(1, 0, 1, 0)
+    TabFrame.CanvasSize = UDim2.new(0, 0, 0, 300)
+    TabFrame.ScrollBarThickness = 3
+    TabFrame.Visible = false
+    
+    local TabList = Instance.new("UIListLayout")
+    TabList.Parent = TabFrame
+    TabList.SortOrder = Enum.SortOrder.LayoutOrder
+    TabList.Padding = UDim.new(0, 10)
+    
+    local TabBtn = Instance.new("TextButton")
+    TabBtn.Parent = Sidebar
+    TabBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
+    TabBtn.Size = UDim2.new(1, 0, 0, 38)
+    TabBtn.Font = Enum.Font.GothamMedium
+    TabBtn.Text = "  " .. tabName
+    TabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+    TabBtn.TextSize = 13
+    TabBtn.TextXAlignment = Enum.TextXAlignment.Left
+    
+    TabBtn.MouseButton1Click:Connect(function()
+        for _, t in pairs(tabs) do
+            t.Frame.Visible = false
+            t.Button.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
+            t.Button.TextColor3 = Color3.fromRGB(180, 180, 180)
+        end
+        TabFrame.Visible = true
+        TabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+        TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end)
+    
+    table.insert(tabs, {Frame = TabFrame, Button = TabBtn})
+    if #tabs == 1 then
+        TabFrame.Visible = true
+        TabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+        TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end
+    
+    return TabFrame
+end
+
+-- Membuat Tab
+local ClickerTab = CreateTab("Auto Click")
+local FarmTab = CreateTab("Egg Farm")
+
+-- Helper Komponen UI (Toggle & Dropdown Tiruan yang Rapi)
+local function AddToggle(tab, title, callback)
+    local btn = Instance.new("TextButton")
+    btn.Parent = tab
+    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+    btn.Size = UDim2.new(1, -10, 0, 40)
+    btn.Font = Enum.Font.Gotham
+    btn.Text = "  " .. title .. ": [ OFF ]"
+    btn.TextColor3 = Color3.fromRGB(220, 220, 220)
+    btn.TextSize = 13
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+    
+    local state = false
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        if state then
+            btn.BackgroundColor3 = Color3.fromRGB(40, 140, 75)
+            btn.Text = "  " .. title .. ": [ ON ]"
+        else
+            btn.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+            btn.Text = "  " .. title .. ": [ OFF ]"
+        end
+        callback(state)
+    end)
+end
+
+-- VARIABEL LOGIKA SCRIPT
 getgenv().AutoClicking = false
 getgenv().AutoFarmEgg = false
-getgenv().SelectedEgg = nil
-local ClickDelay = 0.1
 local clientSequenceCounter = 2
 
 local eggNames = {}
 local eggObjects = {}
+local selectedEgg = nil
 
--- 1. Scan Telur Otomatis dari Workspace.Eggs
 local function ScanEggs()
     table.clear(eggNames)
     table.clear(eggObjects)
-    
     local eggsFolder = Workspace:FindFirstChild("Eggs")
     if eggsFolder then
-        for _, item in ipairs(eggsFolder:GetChildren()) do
-            if item:IsA("Folder") or item:IsA("Model") then
-                local name = item.Name
-                if name ~= "30M Visits" and (item:FindFirstChild("Egg") or item:FindFirstChild("PriceTag") or item:FindFirstChild("1") or item:FindFirstChild("2")) then
-                    table.insert(eggNames, name)
-                    eggObjects[name] = item
+        local success, children = pcall(function() return eggsFolder:GetChildren() end)
+        if success and children then
+            for _, item in ipairs(children) do
+                if item:IsA("Folder") or item:IsA("Model") then
+                    local name = item.Name
+                    if name ~= "30M Visits" and (item:FindFirstChild("Egg") or item:FindFirstChild("PriceTag") or item:FindFirstChild("1") or item:FindFirstChild("2")) then
+                        table.insert(eggNames, name)
+                        eggObjects[name] = item
+                    end
                 end
             end
         end
     end
-    
     table.sort(eggNames)
     if #eggNames == 0 then
         table.insert(eggNames, "None Found")
-    else
-        getgenv().SelectedEgg = eggNames[1]
     end
+    selectedEgg = eggNames[1]
 end
-
 ScanEggs()
 
--- 2. Fungsi Auto Click (Tap Service)
+-- 1. Auto Click Logic
 local function SendTap()
     pcall(function()
         local remoteFolder = ReplicatedStorage:WaitForChild("RemoteServices", 5)
@@ -87,22 +230,22 @@ task.spawn(function()
     while true do
         if getgenv().AutoClicking then
             SendTap()
-            task.wait(ClickDelay)
+            task.wait(0.1)
         else
             task.wait(0.1)
         end
     end
 end)
 
--- 3. Sistem 1x Teleport Lalu Auto Open (Spam F)
+-- 2. Auto Hatch Logic (1x Teleport + Spam F)
 local lastTeleportedEgg = nil
 task.spawn(function()
     while true do
-        if getgenv().AutoFarmEgg and getgenv().SelectedEgg then
+        if getgenv().AutoFarmEgg and selectedEgg then
             pcall(function()
-                local targetEggFolder = eggObjects[getgenv().SelectedEgg]
+                local targetEggFolder = eggObjects[selectedEgg]
                 if targetEggFolder then
-                    if lastTeleportedEgg ~= getgenv().SelectedEgg then
+                    if lastTeleportedEgg ~= selectedEgg then
                         local tpPart = targetEggFolder:FindFirstChild("2") 
                             or targetEggFolder:FindFirstChild("1") 
                             or targetEggFolder:FindFirstChild("PriceTag")
@@ -110,7 +253,7 @@ task.spawn(function()
                         local character = LocalPlayer.Character
                         if tpPart and tpPart:IsA("BasePart") and character and character:FindFirstChild("HumanoidRootPart") then
                             character.HumanoidRootPart.CFrame = tpPart.CFrame + Vector3.new(0, 3, 0)
-                            lastTeleportedEgg = getgenv().SelectedEgg
+                            lastTeleportedEgg = selectedEgg
                             task.wait(0.5)
                         end
                     end
@@ -133,94 +276,36 @@ task.spawn(function()
     end
 end)
 
--- MEMBUAT TAB DI ORION LIBRARY (Mirip Rayfield)
-local ClickerTab = Window:MakeTab({
-    Name = "Auto Click",
-    Icon = "rbxassetid://6023426915",
-    PremiumOnly = false
-})
+-- MENGISI KONTEN KE DALAM TAB
+AddToggle(ClickerTab, "Auto Clicker", function(state)
+    getgenv().AutoClicking = state
+end)
 
-local FarmTab = Window:MakeTab({
-    Name = "Egg Farm",
-    Icon = "rbxassetid://6023426915",
-    PremiumOnly = false
-})
+-- Tombol Pilihan Telur di Tab Farm
+local EggBtn = Instance.new("TextButton")
+EggBtn.Parent = FarmTab
+EggBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+EggBtn.Size = UDim2.new(1, -10, 0, 40)
+EggBtn.Font = Enum.Font.Gotham
+EggBtn.Text = "  Pilih Telur: " .. tostring(selectedEgg)
+EggBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
+EggBtn.TextSize = 13
+EggBtn.TextXAlignment = Enum.TextXAlignment.Left
 
-local SettingsTab = Window:MakeTab({
-    Name = "Settings",
-    Icon = "rbxassetid://6023426915",
-    PremiumOnly = false
-})
+local EggCorner = Instance.new("UICorner")
+EggCorner.CornerRadius = UDim.new(0, 6)
+EggCorner.Parent = EggBtn
 
--- ISI TAB AUTO CLICK
-ClickerTab:AddToggle({
-    Name = "Auto Click",
-    Default = false,
-    Callback = function(Value)
-        getgenv().AutoClicking = Value
-    end
-})
+local eggIdx = 1
+EggBtn.MouseButton1Click:Connect(function()
+    eggIdx = eggIdx + 1
+    if eggIdx > #eggNames then eggIdx = 1 end
+    selectedEgg = eggNames[eggIdx]
+    EggBtn.Text = "  Pilih Telur: " .. tostring(selectedEgg)
+    lastTeleportedEgg = nil
+end)
 
-ClickerTab:AddSlider({
-    Name = "Click Delay",
-    Min = 0.01,
-    Max = 1,
-    Default = 0.1,
-    Increment = 0.01,
-    ValueName = "s",
-    Callback = function(Value)
-        ClickDelay = Value
-    end
-})
-
--- ISI TAB EGG FARM
-local EggDropdown = FarmTab:AddDropdown({
-    Name = "Pilih Telur",
-    Options = eggNames,
-    Default = eggNames[1] or "None",
-    Callback = function(Value)
-        getgenv().SelectedEgg = Value
-        lastTeleportedEgg = nil
-    end
-})
-
-FarmTab:AddToggle({
-    Name = "Auto Hatch (1x Teleport + Spam F)",
-    Default = false,
-    Callback = function(Value)
-        getgenv().AutoFarmEgg = Value
-        lastTeleportedEgg = nil
-        OrionLib:MakeNotification({
-            Title = "Egg Farm",
-            Content = Value and ("Memulai farming: " .. tostring(getgenv().SelectedEgg)) or "Farm Dimatikan",
-            Image = "rbxassetid://4483345998",
-            Time = 3
-        })
-    end
-})
-
-FarmTab:AddButton({
-    Name = "Refresh Daftar Telur",
-    Callback = function()
-        ScanEggs()
-        -- Update dropdown options
-        EggDropdown:Refresh(eggNames, true)
-        OrionLib:MakeNotification({
-            Title = "Berhasil",
-            Content = "Daftar telur diperbarui!",
-            Image = "rbxassetid://4483345998",
-            Time = 2
-        })
-    end
-})
-
--- ISI TAB SETTINGS
-SettingsTab:AddButton({
-    Name = "Close UI (Destroy)",
-    Callback = function()
-        OrionLib:Destroy()
-    end
-})
-
--- Inisialisasi Library
-OrionLib:Init()
+AddToggle(FarmTab, "Auto Hatch (Teleport + Spam F)", function(state)
+    getgenv().AutoFarmEgg = state
+    lastTeleportedEgg = nil
+end)
