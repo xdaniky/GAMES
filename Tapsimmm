@@ -1,127 +1,46 @@
+-- Load Orion Library dengan pengaman error agar tidak mentok di loadstring
+local success, OrionLib = pcall(function()
+    return loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Orion/main/source'))()
+end)
+
+if not success or not OrionLib then
+    warn("Gagal memuat Orion Library! Cek koneksi internet Anda.")
+    return
+end
+
+-- Membuat Window Utama Xdaniky HUB
+local Window = OrionLib:MakeWindow({
+    Name = "Xdaniky HUB : Tap Simulator",
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = "XdanikyTapSim",
+    IntroEnabled = true,
+    IntroText = "Xdaniky HUB Loading...",
+    IntroIcon = "rbxassetid://6031094678"
+})
+
+-- Services & References
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local VirtualInputManager = game:GetService("VirtualInputManager")
-local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
-if CoreGui:FindFirstChild("XdanikyHub") then
-    CoreGui.XdanikyHub:Destroy()
-end
-
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "XdanikyHub"
-ScreenGui.Parent = CoreGui
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-local MainFrame = Instance.new("Frame")
-MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-MainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
-MainFrame.Size = UDim2.new(0, 400, 0, 320)
-MainFrame.Active = true
-MainFrame.Draggable = true
-
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 10)
-UICorner.Parent = MainFrame
-
-local TitleBar = Instance.new("TextLabel")
-TitleBar.Parent = MainFrame
-TitleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-TitleBar.Size = UDim2.new(1, 0, 0, 40)
-TitleBar.Font = Enum.Font.GothamBold
-TitleBar.Text = "  Xdaniky HUB : Tap Simulator"
-TitleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleBar.TextSize = 16
-TitleBar.TextXAlignment = Enum.TextXAlignment.Left
-
-local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 10)
-TitleCorner.Parent = TitleBar
-
-local CloseButton = Instance.new("TextButton")
-CloseButton.Parent = TitleBar
-CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-CloseButton.Position = UDim2.new(1, -35, 0.5, -12)
-CloseButton.Size = UDim2.new(0, 25, 0, 25)
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.Text = "X"
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.TextSize = 14
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
-
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 5)
-CloseCorner.Parent = CloseButton
-
-local ContentFrame = Instance.new("ScrollingFrame")
-ContentFrame.Parent = MainFrame
-ContentFrame.BackgroundTransparency = 1
-ContentFrame.Position = UDim2.new(0, 10, 0, 50)
-ContentFrame.Size = UDim2.new(1, -20, 1, -60)
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 400)
-ContentFrame.ScrollBarThickness = 4
-
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Parent = ContentFrame
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 10)
-
-local function CreateLabel(text)
-    local lbl = Instance.new("TextLabel")
-    lbl.Parent = ContentFrame
-    lbl.BackgroundTransparency = 1
-    lbl.Size = UDim2.new(1, 0, 0, 25)
-    lbl.Font = Enum.Font.GothamBold
-    lbl.Text = text
-    lbl.TextColor3 = Color3.fromRGB(200, 200, 200)
-    lbl.TextSize = 14
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-end
-
-local function CreateToggle(name, callback)
-    local btn = Instance.new("TextButton")
-    btn.Parent = ContentFrame
-    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    btn.Size = UDim2.new(1, 0, 0, 40)
-    btn.Font = Enum.Font.Gotham
-    btn.Text = "  " .. name .. ": [ OFF ]"
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.TextSize = 14
-    btn.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
-    corner.Parent = btn
-    
-    local toggled = false
-    btn.MouseButton1Click:Connect(function()
-        toggled = not toggled
-        if toggled then
-            btn.BackgroundColor3 = Color3.fromRGB(40, 160, 80)
-            btn.Text = "  " .. name .. ": [ ON ]"
-        else
-            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-            btn.Text = "  " .. name .. ": [ OFF ]"
-        end
-        callback(toggled)
-    end)
-end
-
+-- Variables
 getgenv().AutoClicking = false
 getgenv().AutoFarmEgg = false
+getgenv().SelectedEgg = nil
+local ClickDelay = 0.1
 local clientSequenceCounter = 2
 
 local eggNames = {}
 local eggObjects = {}
-local selectedEgg = nil
 
+-- 1. Scan Telur Otomatis dari Workspace.Eggs
 local function ScanEggs()
     table.clear(eggNames)
     table.clear(eggObjects)
+    
     local eggsFolder = Workspace:FindFirstChild("Eggs")
     if eggsFolder then
         for _, item in ipairs(eggsFolder:GetChildren()) do
@@ -134,14 +53,18 @@ local function ScanEggs()
             end
         end
     end
+    
     table.sort(eggNames)
     if #eggNames == 0 then
         table.insert(eggNames, "None Found")
+    else
+        getgenv().SelectedEgg = eggNames[1]
     end
-    selectedEgg = eggNames[1]
 end
+
 ScanEggs()
 
+-- 2. Fungsi Auto Click (Tap Service)
 local function SendTap()
     pcall(function()
         local remoteFolder = ReplicatedStorage:WaitForChild("RemoteServices", 5)
@@ -164,21 +87,22 @@ task.spawn(function()
     while true do
         if getgenv().AutoClicking then
             SendTap()
-            task.wait(0.1)
+            task.wait(ClickDelay)
         else
             task.wait(0.1)
         end
     end
 end)
 
+-- 3. Sistem 1x Teleport Lalu Auto Open (Spam F)
 local lastTeleportedEgg = nil
 task.spawn(function()
     while true do
-        if getgenv().AutoFarmEgg and selectedEgg then
+        if getgenv().AutoFarmEgg and getgenv().SelectedEgg then
             pcall(function()
-                local targetEggFolder = eggObjects[selectedEgg]
+                local targetEggFolder = eggObjects[getgenv().SelectedEgg]
                 if targetEggFolder then
-                    if lastTeleportedEgg ~= selectedEgg then
+                    if lastTeleportedEgg ~= getgenv().SelectedEgg then
                         local tpPart = targetEggFolder:FindFirstChild("2") 
                             or targetEggFolder:FindFirstChild("1") 
                             or targetEggFolder:FindFirstChild("PriceTag")
@@ -186,7 +110,7 @@ task.spawn(function()
                         local character = LocalPlayer.Character
                         if tpPart and tpPart:IsA("BasePart") and character and character:FindFirstChild("HumanoidRootPart") then
                             character.HumanoidRootPart.CFrame = tpPart.CFrame + Vector3.new(0, 3, 0)
-                            lastTeleportedEgg = selectedEgg
+                            lastTeleportedEgg = getgenv().SelectedEgg
                             task.wait(0.5)
                         end
                     end
@@ -209,37 +133,94 @@ task.spawn(function()
     end
 end)
 
-CreateLabel("--- AUTO CLICKER ---")
-CreateToggle("Auto Click", function(state)
-    getgenv().AutoClicking = state
-end)
+-- MEMBUAT TAB DI ORION LIBRARY (Mirip Rayfield)
+local ClickerTab = Window:MakeTab({
+    Name = "Auto Click",
+    Icon = "rbxassetid://6023426915",
+    PremiumOnly = false
+})
 
-CreateLabel("--- EGG FARMING ---")
+local FarmTab = Window:MakeTab({
+    Name = "Egg Farm",
+    Icon = "rbxassetid://6023426915",
+    PremiumOnly = false
+})
 
-local DropdownButton = Instance.new("TextButton")
-DropdownButton.Parent = ContentFrame
-DropdownButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-DropdownButton.Size = UDim2.new(1, 0, 0, 40)
-DropdownButton.Font = Enum.Font.Gotham
-DropdownButton.Text = "  Telur: " .. tostring(selectedEgg)
-DropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-DropdownButton.TextSize = 14
-DropdownButton.TextXAlignment = Enum.TextXAlignment.Left
+local SettingsTab = Window:MakeTab({
+    Name = "Settings",
+    Icon = "rbxassetid://6023426915",
+    PremiumOnly = false
+})
 
-local DropCorner = Instance.new("UICorner")
-DropCorner.CornerRadius = UDim.new(0, 6)
-DropCorner.Parent = DropdownButton
+-- ISI TAB AUTO CLICK
+ClickerTab:AddToggle({
+    Name = "Auto Click",
+    Default = false,
+    Callback = function(Value)
+        getgenv().AutoClicking = Value
+    end
+})
 
-local eggIndex = 1
-DropdownButton.MouseButton1Click:Connect(function()
-    eggIndex = eggIndex + 1
-    if eggIndex > #eggNames then eggIndex = 1 end
-    selectedEgg = eggNames[eggIndex]
-    DropdownButton.Text = "  Telur: " .. tostring(selectedEgg)
-    lastTeleportedEgg = nil
-end)
+ClickerTab:AddSlider({
+    Name = "Click Delay",
+    Min = 0.01,
+    Max = 1,
+    Default = 0.1,
+    Increment = 0.01,
+    ValueName = "s",
+    Callback = function(Value)
+        ClickDelay = Value
+    end
+})
 
-CreateToggle("Auto Hatch (Teleport + Spam F)", function(state)
-    getgenv().AutoFarmEgg = state
-    lastTeleportedEgg = nil
-end)
+-- ISI TAB EGG FARM
+local EggDropdown = FarmTab:AddDropdown({
+    Name = "Pilih Telur",
+    Options = eggNames,
+    Default = eggNames[1] or "None",
+    Callback = function(Value)
+        getgenv().SelectedEgg = Value
+        lastTeleportedEgg = nil
+    end
+})
+
+FarmTab:AddToggle({
+    Name = "Auto Hatch (1x Teleport + Spam F)",
+    Default = false,
+    Callback = function(Value)
+        getgenv().AutoFarmEgg = Value
+        lastTeleportedEgg = nil
+        OrionLib:MakeNotification({
+            Title = "Egg Farm",
+            Content = Value and ("Memulai farming: " .. tostring(getgenv().SelectedEgg)) or "Farm Dimatikan",
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
+    end
+})
+
+FarmTab:AddButton({
+    Name = "Refresh Daftar Telur",
+    Callback = function()
+        ScanEggs()
+        -- Update dropdown options
+        EggDropdown:Refresh(eggNames, true)
+        OrionLib:MakeNotification({
+            Title = "Berhasil",
+            Content = "Daftar telur diperbarui!",
+            Image = "rbxassetid://4483345998",
+            Time = 2
+        })
+    end
+})
+
+-- ISI TAB SETTINGS
+SettingsTab:AddButton({
+    Name = "Close UI (Destroy)",
+    Callback = function()
+        OrionLib:Destroy()
+    end
+})
+
+-- Inisialisasi Library
+OrionLib:Init()
