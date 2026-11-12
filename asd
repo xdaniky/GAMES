@@ -1,26 +1,25 @@
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+local targetParent = (gethui and gethui()) or game:GetService("CoreGui")
 
-if playerGui:FindFirstChild("MinimalAutoClicker") then
-    playerGui.MinimalAutoClicker:Destroy()
+if targetParent:FindFirstChild("MinimalAutoClicker") then
+    targetParent.MinimalAutoClicker:Destroy()
 end
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MinimalAutoClicker"
 screenGui.ResetOnSpawn = false
-screenGui.IgnoreGuiInset = true
-screenGui.Parent = playerGui
+screenGui.DisplayOrder = 999999
+screenGui.Parent = targetParent
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 200, 0, 90)
 mainFrame.Position = UDim2.new(0.5, -100, 0.8, -45)
 mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 mainFrame.BorderSizePixel = 0
-mainFrame.Active = true
-mainFrame.Draggable = true
 mainFrame.Parent = screenGui
 
 local uiCorner = Instance.new("UICorner")
@@ -46,13 +45,42 @@ toggleButton.Font = Enum.Font.GothamMedium
 toggleButton.Text = "Status: OFF"
 toggleButton.TextColor3 = Color3.fromRGB(180, 180, 180)
 toggleButton.TextSize = 13
-toggleButton.ZIndex = 2
 toggleButton.Parent = mainFrame
 
 local btnCorner = Instance.new("UICorner")
 btnCorner.CornerRadius = UDim.new(0, 6)
 btnCorner.Parent = toggleButton
 
+-- Sistem Dragging Manual (Aman untuk klik tombol)
+local dragging, dragInput, dragStart, startPos
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+    end
+end)
+
+mainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+-- Logika Auto Clicker
 local autoClickEnabled = false
 local clickDelay = 0.05
 
@@ -73,7 +101,7 @@ task.spawn(function()
     end
 end)
 
-toggleButton.MouseButton1Click:Connect(function()
+toggleButton.Activated:Connect(function()
     autoClickEnabled = not autoClickEnabled
     
     if autoClickEnabled then
