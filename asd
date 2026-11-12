@@ -14,7 +14,7 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false,
 })
 
--- Create Tabs (Tab Auto Click, Egg Farm, dan Settings)
+-- Create Tabs (Tab Auto Click dibuat duluan agar posisinya di urutan pertama)
 local ClickerTab = Window:CreateTab("Auto Click", "mouse-pointer")
 local FarmTab = Window:CreateTab("Egg Farm", "egg")
 local SettingsTab = Window:CreateTab("Settings", "settings")
@@ -66,7 +66,7 @@ task.spawn(function()
     end
 end)
 
--- 2. Fungsi Scan Semua Telur di workspace.Eggs
+-- 2. Fungsi Scan Telur (Difilter agar hanya mengambil folder telur asli)
 local function ScanEggs()
     table.clear(eggNames)
     table.clear(eggObjects)
@@ -74,7 +74,9 @@ local function ScanEggs()
     local eggsFolder = Workspace:FindFirstChild("Eggs")
     if eggsFolder then
         for _, item in ipairs(eggsFolder:GetChildren()) do
-            if item:IsA("Folder") or item:IsA("Model") then
+            -- Filter ketat: pastikan item adalah folder/model dan memiliki komponen telur (seperti "Egg", "2", atau "PriceTag")
+            if (item:IsA("Folder") or item:IsA("Model")) and 
+               (item:FindFirstChild("Egg") or item:FindFirstChild("2") or item:FindFirstChild("PriceTag") or string.find(item.Name:lower(), "egg")) then
                 table.insert(eggNames, item.Name)
                 eggObjects[item.Name] = item
             end
@@ -124,7 +126,7 @@ task.spawn(function()
                         character.HumanoidRootPart.CFrame = targetCFrame + Vector3.new(0, 3, 2)
                     end
 
-                    -- B. Eksekusi Pembelian Telur
+                    -- B. Eksekusi Pembelian Telur (Simulasi Tombol E + ProximityPrompt)
                     for _, desc in ipairs(targetEgg:GetDescendants()) do
                         if desc:IsA("ProximityPrompt") then
                             if fireproximityprompt then
@@ -144,7 +146,7 @@ task.spawn(function()
 end)
 
 -- UI COMPONENTS --
--- Tab 1: Auto Click (KEMBALI DISEDIAKAN)
+-- Tab 1: Auto Click (Dipastikan tampil kembali di sebelah kiri)
 ClickerTab:CreateToggle({
    Name = "Auto Click",
    CurrentValue = false,
@@ -203,7 +205,7 @@ FarmTab:CreateButton({
       EggDropdown:Refresh(eggNames)
       Rayfield:Notify({
          Title = "Diperbarui",
-         Content = "Ditemukan " .. #eggNames .. " telur di workspace!",
+         Content = "Ditemukan " .. #eggNames + 0 .. " telur valid!",
          Duration = 2,
       })
    end,
