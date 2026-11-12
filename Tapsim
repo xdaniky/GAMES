@@ -1,27 +1,27 @@
--- Memuat Library Rayfield
+-- Load Rayfield UI Library
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Membuat Window Utama
+-- Create Main Window
 local Window = Rayfield:CreateWindow({
-   Name = "xdaniky | Auto Clicker",
-   LoadingTitle = "Memuat Auto Tap...",
-   LoadingSubtitle = "by xdaniky",
+   Name = "Auto Clicker",
+   LoadingTitle = "Loading Script...",
+   LoadingSubtitle = "Minimalist UI",
    ConfigurationSaving = {
       Enabled = false,
       FolderName = nil,
       FileName = "AutoTapConfig"
    },
-   KeySystem = false, -- Ganti true jika ingin pakai key system
+   KeySystem = false,
 })
 
--- Membuat Tab Utama
-local MainTab = Window:CreateTab("Utama", "mouse-pointer")
+-- Create Main Tab
+local MainTab = Window:CreateTab("Main", "mouse-pointer")
 
--- Variabel untuk mengontrol Auto Click
-local _G.AutoClicking = false
-local ClickDelay = 0.1 -- Jeda waktu antar klik (detik)
+-- Auto Click Variables
+getgenv().AutoClicking = false
+local ClickDelay = 0.1
 
--- Fungsi untuk melakukan Tap ke RemoteService
+-- Remote Tap Function
 local function SendTap()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local success, err = pcall(function()
@@ -33,35 +33,35 @@ local function SendTap()
         })
     end)
     if not success then
-        warn("Gagal mengirim tap: " .. tostring(err))
+        warn("Tap request failed: " .. tostring(err))
     end
 end
 
--- Toggle untuk Auto Clicker
+-- Auto Click Toggle
 MainTab:CreateToggle({
    Name = "Auto Click",
    CurrentValue = false,
    Flag = "AutoClickToggle",
    Callback = function(Value)
-      _G.AutoClicking = Value
+      getgenv().AutoClicking = Value
       
-      if _G.AutoClicking then
+      if getgenv().AutoClicking then
          task.spawn(function()
-            while _G.AutoClicking do
+            while getgenv().AutoClicking do
                SendTap()
                task.wait(ClickDelay)
             end
          end)
          Rayfield:Notify({
             Title = "Auto Click",
-            Content = "Auto Click diaktifkan!",
+            Content = "Auto Click Enabled",
             Duration = 2,
             Image = 4483362458,
          })
       else
          Rayfield:Notify({
             Title = "Auto Click",
-            Content = "Auto Click dimatikan!",
+            Content = "Auto Click Disabled",
             Duration = 2,
             Image = 4483362458,
          })
@@ -69,9 +69,9 @@ MainTab:CreateToggle({
    end,
 })
 
--- Slider untuk mengatur kecepatan klik (Delay)
+-- Click Delay Slider
 MainTab:CreateSlider({
-   Name = "Kecepatan Klik (Delay detik)",
+   Name = "Click Delay (Seconds)",
    Range = {0.01, 1},
    Increment = 0.01,
    Suffix = "s",
@@ -82,10 +82,10 @@ MainTab:CreateSlider({
    end,
 })
 
--- Notifikasi bahwa script berhasil dimuat
+-- Loaded Notification
 Rayfield:Notify({
-   Title = "Script Berhasil Dimuat",
-   Content = "UI Rayfield Minimalis siap digunakan.",
+   Title = "Script Loaded",
+   Content = "Minimalist Rayfield UI is ready.",
    Duration = 3,
    Image = 4483362458,
 })
