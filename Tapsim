@@ -1,5 +1,12 @@
--- Load Rayfield UI Library
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- Load Rayfield UI Library safely
+local success, Rayfield = pcall(function()
+    return loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+end)
+
+if not success or not Rayfield then
+    warn("Failed to load Rayfield Library! Please check your executor.")
+    return
+end
 
 -- Create Main Window with "Tap Simulator" Subtitle
 local Window = Rayfield:CreateWindow({
@@ -34,7 +41,7 @@ local clientSequenceCounter = 2
 
 -- 1. Auto Click Function (Tap Service)
 local function SendTap()
-    local success, err = pcall(function()
+    pcall(function()
         local remoteFolder = ReplicatedStorage:WaitForChild("RemoteServices", 5)
         local tapService = remoteFolder and remoteFolder:WaitForChild("TapService", 5)
         local reFolder = tapService and tapService:WaitForChild("RE", 5)
@@ -70,4 +77,8 @@ task.spawn(function()
                 local eggPart = Workspace.Eggs.Heaven["2"]
                 local character = LocalPlayer.Character
                 if eggPart and character and character:FindFirstChild("HumanoidRootPart") then
-                    character.HumanoidRootPart
+                    character.HumanoidRootPart.CFrame = eggPart.CFrame + Vector3.new(0, 3, 0)
+                end
+            end)
+        end
+        task.
