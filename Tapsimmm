@@ -1,42 +1,161 @@
--- Load Rayfield UI Library
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
--- Create Main Window
-local Window = Rayfield:CreateWindow({
-   Name = "Xdaniky HUB : Tap Simulator",
-   LoadingTitle = "Loading Xdaniky HUB...",
-   LoadingSubtitle = "Tap Simulator",
-   ConfigurationSaving = {
-      Enabled = false,
-      FolderName = nil,
-      FileName = "XdanikyHubConfig"
-   },
-   KeySystem = false,
-})
-
--- Create Tabs
-local ClickerTab = Window:CreateTab("Auto Click", "mouse-pointer")
-local FarmTab = Window:CreateTab("Egg Farm", "egg")
-local SettingsTab = Window:CreateTab("Settings", "settings")
-
--- Services & References
+-- Xdaniky HUB : Tap Simulator (Pure Roblox UI - No Loadstring Error)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
--- Variables
+-- Hapus UI lama jika script dijalankan ulang
+if CoreGui:FindFirstChild("XdanikyHub") then
+    CoreGui.XdanikyHub:Destroy()
+end
+
+-- Buat ScreenGui Utama
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "XdanikyHub"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Main Frame (Jendela Utama)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+MainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+MainFrame.Size = UDim2.new(0, 400, 0, 320)
+MainFrame.Active = true
+MainFrame.Draggable = true -- Bisa digeser-geser
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = MainFrame
+
+-- Title Bar
+local TitleBar = Instance.new("TextLabel")
+TitleBar.Name = "TitleBar"
+TitleBar.Parent = MainFrame
+TitleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+TitleBar.Size = UDim2.new(1, 0, 0, 40)
+TitleBar.Font = Enum.Font.GothamBold
+TitleBar.Text = "  Xdaniky HUB : Tap Simulator"
+TitleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleBar.TextSize = 16
+TitleBar.TextXAlignment = Enum.TextXAlignment.Left
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 10)
+TitleCorner.Parent = TitleBar
+
+-- Close/Hide Button
+local CloseButton = Instance.new("TextButton")
+CloseButton.Parent = TitleBar
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseButton.Position = UDim2.new(1, -35, 0.5, -12)
+CloseButton.Size = UDim2.new(0, 25, 0, 25)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextSize = 14
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 5)
+CloseCorner.Parent = CloseButton
+
+-- Container untuk Menu (Auto Click & Egg Farm)
+local ContentFrame = Instance.new("ScrollingFrame")
+ContentFrame.Parent = MainFrame
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Position = UDim2.new(0, 10, 0, 50)
+ContentFrame.Size = UDim2.new(1, -20, 1, -60)
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 400)
+ContentFrame.ScrollBarThickness = 4
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = ContentFrame
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 10)
+
+-- Helper Fungsi untuk Membuat Label Section
+local function CreateLabel(text)
+    local lbl = Instance.new("TextLabel")
+    lbl.Parent = ContentFrame
+    lbl.BackgroundTransparency = 1
+    lbl.Size = UDim2.new(1, 0, 0, 25)
+    lbl.Font = Enum.Font.GothamBold
+    lbl.Text = text
+    lbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+    lbl.TextSize = 14
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+end
+
+-- Helper Fungsi untuk Toggle Button
+local function CreateToggle(name, callback)
+    local btn = Instance.new("TextButton")
+    btn.Parent = ContentFrame
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    btn.Size = UDim2.new(1, 0, 0, 40)
+    btn.Font = Enum.Font.Gotham
+    btn.Text = "  " .. name .. ": [ OFF ]"
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 14
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+    
+    local toggled = false
+    btn.MouseButton1Click:Connect(function()
+        toggled = not toggled
+        if toggled then
+            btn.BackgroundColor3 = Color3.fromRGB(40, 160, 80)
+            btn.Text = "  " .. name .. ": [ ON ]"
+        else
+            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+            btn.Text = "  " .. name .. ": [ OFF ]"
+        end
+        callback(toggled)
+    end)
+end
+
+-- VARIABEL LOGIKA SCRIPT --
 getgenv().AutoClicking = false
 getgenv().AutoFarmEgg = false
-getgenv().SelectedEgg = nil
-local ClickDelay = 0.1
 local clientSequenceCounter = 2
 
+-- Scan Telur Otomatis
 local eggNames = {}
 local eggObjects = {}
+local selectedEgg = nil
 
--- 1. Auto Click Function (Tap Service)
+local function ScanEggs()
+    table.clear(eggNames)
+    table.clear(eggObjects)
+    local eggsFolder = Workspace:FindFirstChild("Eggs")
+    if eggsFolder then
+        for _, item in ipairs(eggsFolder:GetChildren()) do
+            if item:IsA("Folder") or item:IsA("Model") then
+                local name = item.Name
+                if name ~= "30M Visits" and (item:FindFirstChild("Egg") or item:FindFirstChild("PriceTag") or item:FindFirstChild("1") or item:FindFirstChild("2")) then
+                    table.insert(eggNames, name)
+                    eggObjects[name] = item
+                end
+            end
+        end
+    end
+    table.sort(eggNames)
+    if #eggNames == 0 then
+        table.insert(eggNames, "None Found")
+    end
+    selectedEgg = eggNames[1]
+end
+ScanEggs()
+
+-- 1. FITUR AUTO CLICK
 local function SendTap()
     pcall(function()
         local remoteFolder = ReplicatedStorage:WaitForChild("RemoteServices", 5)
@@ -59,52 +178,22 @@ task.spawn(function()
     while true do
         if getgenv().AutoClicking then
             SendTap()
-            task.wait(ClickDelay)
+            task.wait(0.1)
         else
             task.wait(0.1)
         end
     end
 end)
 
--- 2. Fungsi Scan Telur Berdasarkan Struktur Workspace.Eggs
-local function ScanEggs()
-    table.clear(eggNames)
-    table.clear(eggObjects)
-    
-    local eggsFolder = Workspace:FindFirstChild("Eggs")
-    if eggsFolder then
-        for _, item in ipairs(eggsFolder:GetChildren()) do
-            if item:IsA("Folder") or item:IsA("Model") then
-                local name = item.Name
-                if name ~= "30M Visits" and (item:FindFirstChild("Egg") or item:FindFirstChild("PriceTag") or item:FindFirstChild("1") or item:FindFirstChild("2")) then
-                    table.insert(eggNames, name)
-                    eggObjects[name] = item
-                end
-            end
-        end
-    end
-    
-    table.sort(eggNames)
-    if #eggNames == 0 then
-        table.insert(eggNames, "None Found")
-    else
-        getgenv().SelectedEgg = eggNames[1]
-    end
-end
-
-ScanEggs()
-
--- 3. Sistem 1x Teleport Lalu Auto Open (Tombol F)
+-- 2. FITUR AUTO HATCH (1x Teleport + Spam F)
 local lastTeleportedEgg = nil
-
 task.spawn(function()
     while true do
-        if getgenv().AutoFarmEgg and getgenv().SelectedEgg then
+        if getgenv().AutoFarmEgg and selectedEgg then
             pcall(function()
-                local targetEggFolder = eggObjects[getgenv().SelectedEgg]
+                local targetEggFolder = eggObjects[selectedEgg]
                 if targetEggFolder then
-                    -- Teleport 1x saja saat mulai atau mengganti telur
-                    if lastTeleportedEgg ~= getgenv().SelectedEgg then
+                    if lastTeleportedEgg ~= selectedEgg then
                         local tpPart = targetEggFolder:FindFirstChild("2") 
                             or targetEggFolder:FindFirstChild("1") 
                             or targetEggFolder:FindFirstChild("PriceTag")
@@ -112,21 +201,17 @@ task.spawn(function()
                         local character = LocalPlayer.Character
                         if tpPart and tpPart:IsA("BasePart") and character and character:FindFirstChild("HumanoidRootPart") then
                             character.HumanoidRootPart.CFrame = tpPart.CFrame + Vector3.new(0, 3, 0)
-                            lastTeleportedEgg = getgenv().SelectedEgg
+                            lastTeleportedEgg = selectedEgg
                             task.wait(0.5)
                         end
                     end
 
-                    -- Trigger ProximityPrompt jika ada
                     for _, desc in ipairs(targetEggFolder:GetDescendants()) do
                         if desc:IsA("ProximityPrompt") then
-                            if fireproximityprompt then
-                                fireproximityprompt(desc)
-                            end
+                            if fireproximityprompt then fireproximityprompt(desc) end
                         end
                     end
 
-                    -- Simulasi menekan tombol "F" secara otomatis untuk membuka/menyalakan Auto Hatch game
                     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
                     task.wait(0.05)
                     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
@@ -139,86 +224,41 @@ task.spawn(function()
     end
 end)
 
--- UI COMPONENTS --
--- Tab 1: Auto Click
-ClickerTab:CreateToggle({
-   Name = "Auto Click",
-   CurrentValue = false,
-   Flag = "AutoClickToggle",
-   Callback = function(Value)
-      getgenv().AutoClicking = Value
-   end,
-})
+-- MEMBUAT KOMPONEN UI DI DALAM FRAME --
+CreateLabel("--- AUTO CLICKER ---")
+CreateToggle("Auto Click", function(state)
+    getgenv().AutoClicking = state
+end)
 
-ClickerTab:CreateSlider({
-   Name = "Click Delay (Seconds)",
-   Range = {0.01, 1},
-   Increment = 0.01,
-   Suffix = "s",
-   CurrentValue = 0.1,
-   Flag = "ClickDelaySlider",
-   Callback = function(Value)
-      ClickDelay = Value
-   end,
-})
+CreateLabel("--- EGG FARMING ---")
 
--- Tab 2: Egg Farm
-local EggDropdown = FarmTab:CreateDropdown({
-   Name = "Pilih Telur",
-   Options = eggNames,
-   CurrentOption = {eggNames[1] or "None Found"},
-   MultipleOptions = false,
-   Flag = "EggDropdown",
-   Callback = function(Options)
-      if type(Options) == "table" then
-          getgenv().SelectedEgg = Options[1]
-      else
-          getgenv().SelectedEgg = Options
-      end
-      lastTeleportedEgg = nil
-   end,
-})
+-- Dropdown Sederhana untuk Pilih Telur
+local DropdownButton = Instance.new("TextButton")
+DropdownButton.Parent = ContentFrame
+DropdownButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+DropdownButton.Size = UDim2.new(1, 0, 0, 40)
+DropdownButton.Font = Enum.Font.Gotham
+DropdownButton.Text = "  Telur: " .. tostring(selectedEgg)
+DropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+DropdownButton.TextSize = 14
+DropdownButton.TextXAlignment = Enum.TextXAlignment.Left
 
-FarmTab:CreateToggle({
-   Name = "Auto Hatch (Teleport + Spam F)",
-   CurrentValue = false,
-   Flag = "AutoFarmToggle",
-   Callback = function(Value)
-      getgenv().AutoFarmEgg = Value
-      lastTeleportedEgg = nil
-      Rayfield:Notify({
-         Title = "Egg Farm",
-         Content = Value and ("Farming Telur: " .. tostring(getgenv().SelectedEgg)) or "Farm Dimatikan",
-         Duration = 2,
-      })
-   end,
-})
+local DropCorner = Instance.new("UICorner")
+DropCorner.CornerRadius = UDim.new(0, 6)
+DropCorner.Parent = DropdownButton
 
-FarmTab:CreateButton({
-   Name = "Refresh Daftar Telur",
-   Callback = function()
-      ScanEggs()
-      EggDropdown:Refresh(eggNames)
-      Rayfield:Notify({
-         Title = "Diperbarui",
-         Content = "Berhasil memuat ulang daftar telur!",
-         Duration = 2,
-      })
-   end,
-})
+local eggIndex = 1
+DropdownButton.MouseButton1Click:Connect(function()
+    eggIndex = eggIndex + 1
+    if eggIndex > #eggNames then eggIndex = 1 end
+    selectedEgg = eggNames[eggIndex]
+    DropdownButton.Text = "  Telur: " .. tostring(selectedEgg)
+    lastTeleportedEgg = nil
+end)
 
--- Tab 3: Settings
-SettingsTab:CreateButton({
-   Name = "Toggle UI (Buka/Tutup)",
-   Callback = function()
-      Rayfield:ToggleUI()
-   end,
-})
+CreateToggle("Auto Hatch (Teleport + Spam F)", function(state)
+    getgenv().AutoFarmEgg = state
+    lastTeleportedEgg = nil
+end)
 
--- Initial Notification
-Rayfield:Notify({
-   Title = "Xdaniky HUB Loaded",
-   Content = "Auto Click & Auto Hatch (F) siap digunakan!",
-   Duration = 3,
-})
-```[cite: 1, 2, 3, 7, 8]
+print("Xdaniky HUB berhasil dimuat tanpa loadstring error!")
