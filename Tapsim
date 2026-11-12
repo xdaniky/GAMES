@@ -1,67 +1,74 @@
--- Load Rayfield UI Library
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- LOADING KAVO UI --
+local selectedTheme = "Sentinel"
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("xdaniky | Heaven Egg Automation", selectedTheme)
 
--- Create Main Window
-local Window = Rayfield:CreateWindow({
-   Name = "xdaniky | Egg Hatch & Teleport",
-   LoadingTitle = "Loading Egg Automation...",
-   LoadingSubtitle = "Heaven Egg Mode",
-   ConfigurationSaving = {
-      Enabled = false,
-      FolderName = nil,
-      FileName = "EggConfig"
-   },
-   KeySystem = false,
-})
+-- TABS --
+local EggTab = Window:NewTab("Egg Farm")
+local SettingsTab = Window:NewTab("Settings")
 
--- Create Tabs
-local FarmTab = Window:CreateTab("Egg Farm", "egg")
-local SettingsTab = Window:CreateTab("Settings", "settings")
+-- SECTIONS --
+local FarmSection = EggTab:NewSection("Heaven Egg Features")
+local UISection = SettingsTab:NewSection("UI Settings")
 
--- Services & References
+-- VARIABLES --
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
 
--- Variables
 getgenv().AutoTeleport = false
 getgenv().AutoHatch = false
-local hatchAmount = "1" -- Default hatch count (1 or 3 depending on game passes/features)
 
--- Target Egg Paths based on your details
-local function getEggModel()
-    local eggsFolder = Workspace:FindFirstChild("Eggs")
-    if eggsFolder then
-        local heavenFolder = eggsFolder:FindFirstChild("Heaven")
-        if heavenFolder then
-            return heavenFolder:FindFirstChild("Egg")
-        end
-    end
-    return nil
-end
-
-local function getEggTeleportPart()
-    local eggsFolder = Workspace:FindFirstChild("Eggs")
-    if eggsFolder then
-        local heavenFolder = eggsFolder:FindFirstChild("Heaven")
-        if heavenFolder then
-            return heavenFolder:FindFirstChild("2")
-        end
-    end
-    return nil
-end
-
--- Teleport Loop Function
+-- TELEPORT LOOP --
 task.spawn(function()
     while true do
         if getgenv().AutoTeleport then
-            local success, err = pcall(function()
-                local eggPart = getEggTeleportPart()
+            pcall(function()
+                local eggPart = Workspace.Eggs.Heaven["2"]
                 local character = LocalPlayer.Character
                 if eggPart and character and character:FindFirstChild("HumanoidRootPart") then
-                    -- Teleport slightly above or directly to the target part
                     character.HumanoidRootPart.CFrame = eggPart.CFrame + Vector3.new(0, 3, 0)
                 end
             end)
-            if not success then
+        end
+        task.wait(0.5)
+    end
+end)
+
+-- AUTO HATCH LOOP --
+task.spawn(function()
+    while true do
+        if getgenv().AutoHatch then
+            pcall(function()
+                local buyEggRemote = ReplicatedStorage:FindFirstChild("RemoteServices") 
+                    and ReplicatedStorage.RemoteServices:FindFirstChild("EggService") 
+                    and ReplicatedStorage.RemoteServices.EggService:FindFirstChild("RE") 
+                    and ReplicatedStorage.RemoteServices.EggService.RE:FindFirstChild("BuyEgg")
+
+                if buyEggRemote then
+                    buyEggRemote:FireServer("Heaven", 1)
+                end
+            end)
+        end
+        task.wait(0.3)
+    end
+end)
+
+-- UI COMPONENTS --
+FarmSection:NewToggle("Auto Teleport to Heaven Egg", "Teleports you directly to the Heaven Egg", function(state)
+    getgenv().AutoTeleport = state
+    print("Auto Teleport: " .. (state and "On" or "Off"))
+end)
+
+FarmSection:NewToggle("Auto Hatch Heaven Egg", "Automatically hatches the Heaven Egg", function(state)
+    getgenv().AutoHatch = state
+    print("Auto Hatch: " .. (state and "On" or "Off"))
+end)
+
+UISection:NewKeybind("Toggle UI", "Keybind to open/close the menu", Enum.KeyCode.Insert, function()
+    Library:ToggleUI()
+end)
+
+-- NOTIFICATION
+print("Heaven Egg Automation Script Loaded Successfully!")
