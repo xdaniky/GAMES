@@ -4,18 +4,13 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 -- Create Main Window
 local Window = Rayfield:CreateWindow({
    Name = "Xdaniky HUB : Tap Simulator",
-   LoadingTitle = "Loading Dynamic Hub...",
-   LoadingSubtitle = "Auto-Detect Eggs",
-   ConfigurationSaving = {
-      Enabled = false,
-      FolderName = nil,
-      FileName = "XdanikyHubConfig"
-   },
+   LoadingTitle = "Loading Scanner Hub...",
+   LoadingSubtitle = "Auto-Detect & Fix",
+   ConfigurationSaving = { Enabled = false },
    KeySystem = false,
 })
 
 -- Create Tabs
-local ClickerTab = Window:CreateTab("Auto Click", "mouse-pointer")
 local FarmTab = Window:CreateTab("Egg Farm", "egg")
 local SettingsTab = Window:CreateTab("Settings", "settings")
 
@@ -26,99 +21,76 @@ local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
 -- Variables
-getgenv().AutoClicking = false
-getgenv().SelectedEgg = nil
 getgenv().AutoFarmEgg = false
-local ClickDelay = 0.1
-local clientSequenceCounter = 2
-
--- List untuk menyimpan nama-nama telur yang terdeteksi
+getgenv().SelectedEgg = nil
 local eggNames = {}
-local eggFolders = {}
+local eggObjects = {}
 
--- 1. Auto Click Function (Tap Service)
-local function SendTap()
-    pcall(function()
-        local remoteFolder = ReplicatedStorage:WaitForChild("RemoteServices", 5)
-        local tapService = remoteFolder and remoteFolder:WaitForChild("TapService", 5)
-        local reFolder = tapService and tapService:WaitForChild("RE", 5)
-        local tapEvent = reFolder and reFolder:WaitForChild("TapRequested", 5)
-        
-        if tapEvent then
-            clientSequenceCounter = clientSequenceCounter + 1
-            tapEvent:FireServer({
-                ClientSequence = clientSequenceCounter,
-                Auto = false,
-                Source = "screen"
-            })
-        end
-    end)
-end
-
-task.spawn(function()
-    while true do
-        if getgenv().AutoClicking then
-            SendTap()
-            task.wait(ClickDelay)
-        else
-            task.wait(0.1)
-        end
-    end
-end)
-
--- 2. Fungsi Otomatis Mendeteksi Telur di workspace.Eggs
+-- 1. Fungsi Scan Telur yang Lebih Luas & Cerdas
 local function ScanEggs()
     table.clear(eggNames)
-    table.clear(eggFolders)
+    table.clear(eggObjects)
     
     local eggsFolder = Workspace:FindFirstChild("Eggs")
     if eggsFolder then
-        for _, eggFolder in ipairs(eggsFolder:GetChildren()) do
-            -- Cek apakah folder tersebut memiliki objek "Egg" atau bagian telepor/posisi
-            if eggFolder:FindFirstChild("Egg") or eggFolder:FindFirstChild("2") then
-                local eggName = eggFolder.Name
-                table.insert(eggNames, eggName)
-                eggFolders[eggName] = eggFolder
+        -- Scan semua folder telur di dalam workspace.Eggs
+        for _, category in ipairs(eggsFolder:GetChildren()) do
+            -- Jika kategori berisi telur langsung atau sub-folder
+            if category:IsA("Folder") or category:IsA("Model") then
+                -- Cek apakah kategori ini sendiri adalah telur (punya Egg atau part teleport)
+                if category:FindFirstChild("Egg") or category:FindFirstChild("2") or category:FindFirstChild("PriceTag") then
+                    local eggName = category.Name
+                    table.insert(eggNames, eggName)
+                    eggObjects[eggName] = category
+                else
+                    -- Jika berupa sub-folder (misal: World1, World2, dll)
+                    for _, subEgg in ipairs(category:GetChildren()) do
+                        if subEgg:IsA("Folder") or subEgg:IsA("Model") then
+                            local eggName = category.Name .. " - " .. subEgg.Name
+                            table.insert(eggNames, eggName)
+                            eggObjects[eggName] = subEgg
+                        end
+                    end
+                end
             end
         end
     end
     
-    -- Jika tidak ada telur terdeteksi, masukkan placeholder agar UI tidak error
     if #eggNames == 0 then
-        table.insert(eggNames, "None Found")
+        table.insert(eggNames, "Tidak ada telur ditemukan")
     end
 end
 
--- Scan pertama kali saat script dijalankan
 ScanEggs()
 
--- 3. Combined Auto Teleport & Hatch Loop untuk Telur yang Dipilih
+-- 2. Combined Auto Teleport & Hatch Loop
 task.spawn(function()
     while true do
         if getgenv().AutoFarmEgg and getgenv().SelectedEgg then
             pcall(function()
-                local targetEggFolder = eggFolders[getgenv().SelectedEgg]
-                if targetEggFolder then
-                    -- Ambil bagian teleport (biasanya part "2" atau model "Egg")
-                    local teleportPart = targetEggFolder:FindFirstChild("2") or targetEggFolder:FindFirstChild("Egg")
-                    local character = LocalPlayer.Character
+                local targetEgg = eggObjects[getgenv().SelectedEgg]
+                if targetEgg then
+                    -- Cari bagian untuk teleport (prioritas: part "2", lalu "Egg", lalu primary part)
+                    local teleportPart = targetEgg:FindFirstChild("2") 
+                        or targetEgg:FindFirstChild("Egg") 
+                        or targetEgg:FindFirstChild("Hitbox") 
+                        or targetEgg.PrimaryPart 
+                        or targetEgg:FindFirstChildWhichIsA("BasePart")
                     
+                    local character = LocalPlayer.Character
                     if teleportPart and character and character:FindFirstChild("HumanoidRootPart") then
                         character.HumanoidRootPart.CFrame = teleportPart.CFrame + Vector3.new(0, 3, 0)
                     end
 
-                    -- Coba kirim remote pembelian telur
-                    local remoteFolder = ReplicatedStorage:FindFirstChild("RemoteServices")
-                    if remoteFolder then
-                        local eggService = remoteFolder:FindFirstChild("EggService") or remoteFolder:FindFirstChild("Eggs")
-                        if eggService then
-                            local re = eggService:FindFirstChild("RE") or eggService:FindFirstChild("Remote") or eggService
-                            for _, child in ipairs(re:GetChildren()) do
-                                if child:IsA("RemoteEvent") then
-                                    child:FireServer(getgenv().SelectedEgg, 1)
-                                    child:FireServer(getgenv().SelectedEgg .. " Egg", 1)
-                                end
-                            end
+                    -- Coba cari dan temukan Remote Event untuk membeli telur secara otomatis di seluruh ReplicatedStorage
+                    for _, descendant in ipairs(ReplicatedStorage:GetDescendants()) do
+                        if descendant:IsA("RemoteEvent") and (string.find(descendant.Name:lower(), "egg") or string.find(descendant.Name:lower(), "buy")) then
+                            -- Bersihkan nama telur jika menggunakan format kategori (misal "Heaven - Egg" jadi "Heaven")
+                            local cleanEggName = string.match(getgenv().SelectedEgg, ".*fleshed (.*)") or getgenv().SelectedEgg
+                            cleanEggName = string.gsub(cleanEggName, ".*%- ", "")
+                            
+                            descendant:FireServer(cleanEggName, 1)
+                            descendant:FireServer(cleanEggName, "Normal")
                         end
                     end
                 end
@@ -129,31 +101,8 @@ task.spawn(function()
 end)
 
 -- UI COMPONENTS --
--- Tab 1: Auto Clicker
-ClickerTab:CreateToggle({
-   Name = "Auto Click",
-   CurrentValue = false,
-   Flag = "AutoClickToggle",
-   Callback = function(Value)
-      getgenv().AutoClicking = Value
-   end,
-})
-
-ClickerTab:CreateSlider({
-   Name = "Click Delay (Seconds)",
-   Range = {0.01, 1},
-   Increment = 0.01,
-   Suffix = "s",
-   CurrentValue = 0.1,
-   Flag = "ClickDelaySlider",
-   Callback = function(Value)
-      ClickDelay = Value
-   end,
-})
-
--- Tab 2: Egg Farm (Dynamic Dropdown & Toggle)
 FarmTab:CreateDropdown({
-   Name = "Select Egg (Auto-Detected)",
+   Name = "Pilih Telur (Auto-Detected)",
    Options = eggNames,
    CurrentOption = eggNames[1] or "None",
    Flag = "EggDropdown",
@@ -163,44 +112,40 @@ FarmTab:CreateDropdown({
 })
 
 FarmTab:CreateToggle({
-   Name = "Auto Farm Selected Egg (Teleport + Hatch)",
+   Name = "Auto Farm Telur (Teleport + Hatch)",
    CurrentValue = false,
    Flag = "AutoFarmToggle",
    Callback = function(Value)
-      getgenv().HeavenFarm = Value -- dihubungkan ke variabel farm
       getgenv().AutoFarmEgg = Value
       Rayfield:Notify({
          Title = "Egg Farm",
-         Content = Value and ("Farming: " .. tostring(getgenv().SelectedEgg)) or "Farm Stopped",
+         Content = Value and ("Memulai farming: " .. tostring(getgenv().SelectedEgg)) or "Farm Dimatikan",
          Duration = 2,
       })
    end,
 })
 
--- Tombol untuk Refresh daftar telur jika ada tambahan baru
 FarmTab:CreateButton({
-   Name = "Refresh Egg List",
+   Name = "Refresh Daftar Telur",
    Callback = function()
       ScanEggs()
       Rayfield:Notify({
-         Title = "Refreshed",
-         Content = "Daftar telur berhasil diperbarui dari workspace!",
+         Title = "Diperbarui",
+         Content = "Daftar telur berhasil di-scan ulang!",
          Duration = 2,
       })
    end,
 })
 
--- Tab 3: Settings
 SettingsTab:CreateButton({
-   Name = "Toggle UI (Open/Close)",
+   Name = "Toggle UI (Buka/Tutup)",
    Callback = function()
       Rayfield:ToggleUI()
    end,
 })
 
--- Initial Notification
 Rayfield:Notify({
-   Title = "Xdaniky HUB Loaded",
-   Content = "Auto-detect eggs is ready!",
+   Title = "Xdaniky HUB",
+   Content = "Script siap digunakan!",
    Duration = 3,
 })
