@@ -21,7 +21,6 @@ local TapEvent = ReplicatedStorage
 	:WaitForChild("TapRequested")
 
 -- ===== Aksi klik =====
--- Jika TapController mengirim argumen, tambahkan di dalam FireServer(...)
 local function doClick()
 	pcall(function()
 		TapEvent:FireServer()
