@@ -1,5 +1,12 @@
--- Load Rayfield UI Library
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- Load Rayfield UI Library dengan pengaman error
+local success, Rayfield = pcall(function()
+    return loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+end)
+
+if not success or not Rayfield then
+    warn("Gagal memuat Rayfield Library! Periksa koneksi internet atau executor Anda.")
+    return
+end
 
 -- Create Main Window
 local Window = Rayfield:CreateWindow({
