@@ -1,124 +1,91 @@
--- Memuat Kavo UI Library secara aman
-local success, Library = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-end)
+-- Memuat Library Rayfield
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
-if not success or not Library then
-    warn("Kavo UI gagal dimuat, executor Anda mungkin memblokir HttpGet.")
-    return
-end
+-- Membuat Window Utama
+local Window = Rayfield:CreateWindow({
+   Name = "xdaniky | Auto Clicker",
+   LoadingTitle = "Memuat Auto Tap...",
+   LoadingSubtitle = "by xdaniky",
+   ConfigurationSaving = {
+      Enabled = false,
+      FolderName = nil,
+      FileName = "AutoTapConfig"
+   },
+   KeySystem = false, -- Ganti true jika ingin pakai key system
+})
 
-local Window = Library.CreateLib("xdaniky | Tap Simulator", "Sentinel")
+-- Membuat Tab Utama
+local MainTab = Window:CreateTab("Utama", "mouse-pointer")
 
--- TABS
-local ClickerTab = Window:NewTab("Auto Click")
-local FarmTab = Window:NewTab("Egg Farm")
-local SettingsTab = Window:NewTab("Settings")
+-- Variabel untuk mengontrol Auto Click
+local _G.AutoClicking = false
+local ClickDelay = 0.1 -- Jeda waktu antar klik (detik)
 
--- SECTIONS
-local ClickSection = ClickerTab:NewSection("Clicker Controls")
-local FarmSection = FarmTab:NewSection("Heaven Egg Features")
-local UISection = SettingsTab:NewSection("UI Settings")
-
--- VARIABLES
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
-local LocalPlayer = Players.LocalPlayer
-
-getgenv().AutoClicking = false
-getgenv().AutoTeleport = false
-getgenv().AutoHatch = false
-local ClickDelay = 0.1
-local clientSequenceCounter = 2
-
--- 1. Auto Click Function
+-- Fungsi untuk melakukan Tap ke RemoteService
 local function SendTap()
-    pcall(function()
-        local remoteFolder = ReplicatedStorage:WaitForChild("RemoteServices", 5)
-        local tapService = remoteFolder and remoteFolder:WaitForChild("TapService", 5)
-        local reFolder = tapService and tapService:WaitForChild("RE", 5)
-        local tapEvent = reFolder and reFolder:WaitForChild("TapRequested", 5)
-        
-        if tapEvent then
-            clientSequenceCounter = clientSequenceCounter + 1
-            tapEvent:FireServer({
-                ClientSequence = clientSequenceCounter,
-                Auto = false,
-                Source = "screen"
-            })
-        end
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local success, err = pcall(function()
+        local Event = ReplicatedStorage.RemoteServices.TapService.RE.TapRequested
+        Event:FireServer({
+            ClientSequence = 2,
+            Auto = false,
+            Source = "screen"
+        })
     end)
+    if not success then
+        warn("Gagal mengirim tap: " .. tostring(err))
+    end
 end
 
-task.spawn(function()
-    while true do
-        if getgenv().AutoClicking then
-            SendTap()
-            task.wait(ClickDelay)
-        else
-            task.wait(0.1)
-        end
-    end
-end)
+-- Toggle untuk Auto Clicker
+MainTab:CreateToggle({
+   Name = "Auto Click",
+   CurrentValue = false,
+   Flag = "AutoClickToggle",
+   Callback = function(Value)
+      _G.AutoClicking = Value
+      
+      if _G.AutoClicking then
+         task.spawn(function()
+            while _G.AutoClicking do
+               SendTap()
+               task.wait(ClickDelay)
+            end
+         end)
+         Rayfield:Notify({
+            Title = "Auto Click",
+            Content = "Auto Click diaktifkan!",
+            Duration = 2,
+            Image = 4483362458,
+         })
+      else
+         Rayfield:Notify({
+            Title = "Auto Click",
+            Content = "Auto Click dimatikan!",
+            Duration = 2,
+            Image = 4483362458,
+         })
+      end
+   end,
+})
 
--- 2. Teleport Loop Function
-task.spawn(function()
-    while true do
-        if getgenv().AutoTeleport then
-            pcall(function()
-                local eggPart = Workspace.Eggs.Heaven["2"]
-                local character = LocalPlayer.Character
-                if eggPart and character and character:FindFirstChild("HumanoidRootPart") then
-                    character.HumanoidRootPart.CFrame = eggPart.CFrame + Vector3.new(0, 3, 0)
-                end
-            end)
-        end
-        task.wait(0.5)
-    end
-end)
+-- Slider untuk mengatur kecepatan klik (Delay)
+MainTab:CreateSlider({
+   Name = "Kecepatan Klik (Delay detik)",
+   Range = {0.01, 1},
+   Increment = 0.01,
+   Suffix = "s",
+   CurrentValue = 0.1,
+   Flag = "ClickDelaySlider",
+   Callback = function(Value)
+      ClickDelay = Value
+   end,
+})
 
--- 3. Auto Hatch Function
-task.spawn(function()
-    while true do
-        if getgenv().AutoHatch then
-            pcall(function()
-                local buyEggRemote = ReplicatedStorage:FindFirstChild("RemoteServices") 
-                    and ReplicatedStorage.RemoteServices:FindFirstChild("EggService") 
-                    and ReplicatedStorage.RemoteServices.EggService:FindFirstChild("RE") 
-                    and ReplicatedStorage.RemoteServices.EggService.RE:FindFirstChild("BuyEgg")
-
-                if buyEggRemote then
-                    buyEggRemote:FireServer("Heaven", 1)
-                end
-            end)
-        end
-        task.wait(0.3)
-    end
-end)
-
--- UI COMPONENTS (KAVO)
-ClickSection:NewToggle("Auto Click", "Enables auto clicking via remote", function(state)
-    getgenv().AutoClicking = state
-end)
-
-ClickSection:NewTextBox("Click Delay (s)", "Set delay between clicks", function(txt)
-    local speed = tonumber(txt)
-    if speed and speed > 0 then
-        ClickDelay = speed
-    end
-end)
-
-FarmSection:NewToggle("Auto Teleport to Heaven Egg", "Teleports to Heaven Egg", function(state)
-    getgenv().AutoTeleport = state
-end)
-
-FarmSection:NewToggle("Auto Hatch Heaven Egg", "Automatically hatches Heaven Egg", function(state)
-    getgenv().AutoHatch = state
-end)
-
-UISection:NewKeybind("Toggle UI", "Press key to show/hide UI", Enum.KeyCode.Insert, function()
-    Library:ToggleUI()
-end)
-
-print("Tap Simulator UI Loaded Successfully!")
+-- Notifikasi bahwa script berhasil dimuat
+Rayfield:Notify({
+   Title = "Script Berhasil Dimuat",
+   Content = "UI Rayfield Minimalis siap digunakan.",
+   Duration = 3,
+   Image = 4483362458,
+})
