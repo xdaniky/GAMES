@@ -3,10 +3,14 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Create Main Window
 local Window = Rayfield:CreateWindow({
-   Name = "Auto Clicker Debug",
-   LoadingTitle = "Loading...",
-   LoadingSubtitle = "Diagnostic Mode",
-   ConfigurationSaving = { Enabled = false },
+   Name = "xdaniky | Auto Clicker",
+   LoadingTitle = "Loading Auto Tap...",
+   LoadingSubtitle = "Optimized for TS2",
+   ConfigurationSaving = {
+      Enabled = false,
+      FolderName = nil,
+      FileName = "AutoTapConfig"
+   },
    KeySystem = false,
 })
 
@@ -16,46 +20,38 @@ local MainTab = Window:CreateTab("Main", "mouse-pointer")
 -- Auto Click Variables
 getgenv().AutoClicking = false
 local ClickDelay = 0.1
-local clickCount = 0
+local clientSequenceCounter = 2
 
--- Remote Tap Function with Debug Prints
+-- Remote Tap Function with Auto-Incrementing Sequence
 local function SendTap()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     
-    -- Safely locate the remote event
-    local remoteFolder = ReplicatedStorage:FindFirstChild("RemoteServices")
-    if remoteFolder then
-        local tapService = remoteFolder:FindFirstChild("TapService")
-        if tapService then
-            local re = tapService:FindFirstChild("RE")
-            if re then
-                local event = re:FindFirstChild("TapRequested")
-                if event then
-                    clickCount = clickCount + 1
-                    local success, err = pcall(function()
-                        event:FireServer({
-                            ClientSequence = clickCount, -- Dynamic sequence in case the game checks it
-                            Auto = false,
-                            Source = "screen"
-                        })
-                    end)
-                    if not success then
-                        warn("FireServer error: " + tostring(err))
-                    else
-                        print("Successfully fired tap #" .. clickCount)
-                    end
-                    return
-                end
-            end
+    local success, err = pcall(function()
+        local remoteFolder = ReplicatedStorage:WaitForChild("RemoteServices", 5)
+        local tapService = remoteFolder and remoteFolder:WaitForChild("TapService", 5)
+        local reFolder = tapService and tapService:WaitForChild("RE", 5)
+        local tapEvent = reFolder and reFolder:WaitForChild("TapRequested", 5)
+        
+        if tapEvent then
+            clientSequenceCounter = clientSequenceCounter + 1
+            tapEvent:FireServer({
+                ClientSequence = clientSequenceCounter,
+                Auto = false,
+                Source = "screen"
+            })
+        else
+            warn("TapRequested RemoteEvent not found!")
         end
-    end
+    end)
     
-    warn("Remote path not found! Check if the game updated its structure.")
+    if not success then
+        warn("Failed to fire tap: " .. tostring(err))
+    end
 end
 
 -- Auto Click Toggle
 MainTab:CreateToggle({
-   Name = "Auto Click (Debug)",
+   Name = "Auto Click",
    CurrentValue = false,
    Flag = "AutoClickToggle",
    Callback = function(Value)
@@ -69,15 +65,17 @@ MainTab:CreateToggle({
             end
          end)
          Rayfield:Notify({
-            Title = "Status",
-            Content = "Auto Click Started",
+            Title = "Auto Click",
+            Content = "Auto Click Enabled",
             Duration = 2,
+            Image = 4483362458,
          })
       else
          Rayfield:Notify({
-            Title = "Status",
-            Content = "Auto Click Stopped",
+            Title = "Auto Click",
+            Content = "Auto Click Disabled",
             Duration = 2,
+            Image = 4483362458,
          })
       end
    end,
@@ -98,7 +96,8 @@ MainTab:CreateSlider({
 
 -- Loaded Notification
 Rayfield:Notify({
-   Title = "Loaded",
-   Content = "Check F9 console if clicks don't register.",
+   Title = "Script Loaded",
+   Content = "ClientSequence counter integrated successfully.",
    Duration = 3,
+   Image = 4483362458,
 })
