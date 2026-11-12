@@ -1,124 +1,87 @@
--- Memuat Kavo UI Library dengan aman
-local success, Library = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-end)
-
-if not success or not Library then
-    warn("Gagal memuat Kavo UI Library. Periksa koneksi atau executor Anda.")
-    return
-end
-
-local Window = Library.CreateLib("xdaniky | Tap Simulator", "Sentinel")
-
--- TABS
-local ClickerTab = Window:NewTab("Auto Click")
-local FarmTab = Window:NewTab("Egg Farm")
-local SettingsTab = Window:NewTab("Settings")
-
--- SECTIONS
-local ClickSection = ClickerTab:NewSection("Clicker Controls")
-local FarmSection = FarmTab:NewSection("Heaven Egg Features")
-local UISection = SettingsTab:NewSection("UI Settings")
-
--- VARIABLES
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
-local LocalPlayer = Players.LocalPlayer
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local UserInputService = game:GetService("UserInputService")
 
-getgenv().AutoClicking = false
-getgenv().AutoTeleport = false
-getgenv().AutoHatch = false
-local ClickDelay = 0.1
-local clientSequenceCounter = 2
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
--- 1. Auto Click Function (Tap Service)
-local function SendTap()
-    pcall(function()
-        local remoteFolder = ReplicatedStorage:WaitForChild("RemoteServices", 5)
-        local tapService = remoteFolder and remoteFolder:WaitForChild("TapService", 5)
-        local reFolder = tapService and tapService:WaitForChild("RE", 5)
-        local tapEvent = reFolder and reFolder:WaitForChild("TapRequested", 5)
-        
-        if tapEvent then
-            clientSequenceCounter = clientSequenceCounter + 1
-            tapEvent:FireServer({
-                ClientSequence = clientSequenceCounter,
-                Auto = false,
-                Source = "screen"
-            })
-        end
-    end)
+if playerGui:FindFirstChild("MinimalAutoClicker") then
+    playerGui.MinimalAutoClicker:Destroy()
 end
 
-task.spawn(function()
-    while true do
-        if getgenv().AutoClicking then
-            SendTap()
-            task.wait(ClickDelay)
-        else
-            task.wait(0.1)
-        end
-    end
-end)
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "MinimalAutoClicker"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
 
--- 2. Teleport Loop Function (Heaven Egg Part "2")
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 200, 0, 90)
+mainFrame.Position = UDim2.new(0.5, -100, 0.8, -45)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 8)
+uiCorner.Parent = mainFrame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 30)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.Text = "Auto Clicker"
+titleLabel.TextColor3 = Color3.fromRGB(240, 240, 240)
+titleLabel.TextSize = 14
+titleLabel.Parent = mainFrame
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0.85, 0, 0, 35)
+toggleButton.Position = UDim2.new(0.075, 0, 0.45, 0)
+toggleButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+toggleButton.BorderSizePixel = 0
+toggleButton.AutoButtonColor = false
+toggleButton.Font = Enum.Font.GothamMedium
+toggleButton.Text = "Status: OFF"
+toggleButton.TextColor3 = Color3.fromRGB(180, 180, 180)
+toggleButton.TextSize = 13
+toggleButton.Parent = mainFrame
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 6)
+btnCorner.Parent = toggleButton
+
+local autoClickEnabled = false
+local clickDelay = 0.05
+
 task.spawn(function()
     while true do
-        if getgenv().AutoTeleport then
+        if autoClickEnabled then
             pcall(function()
-                local eggPart = Workspace.Eggs.Heaven["2"]
-                local character = LocalPlayer.Character
-                if eggPart and character and character:FindFirstChild("HumanoidRootPart") then
-                    character.HumanoidRootPart.CFrame = eggPart.CFrame + Vector3.new(0, 3, 0)
+                if mouse1click then
+                    mouse1click()
+                else
+                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+                    task.wait()
+                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
                 end
             end)
         end
-        task.wait(0.5)
+        task.wait(clickDelay)
     end
 end)
 
--- 3. Auto Hatch Function
-task.spawn(function()
-    while true do
-        if getgenv().AutoHatch then
-            pcall(function()
-                local buyEggRemote = ReplicatedStorage:FindFirstChild("RemoteServices") 
-                    and ReplicatedStorage.RemoteServices:FindFirstChild("EggService") 
-                    and ReplicatedStorage.RemoteServices.EggService:FindFirstChild("RE") 
-                    and ReplicatedStorage.RemoteServices.EggService.RE:FindFirstChild("BuyEgg")
-
-                if buyEggRemote then
-                    buyEggRemote:FireServer("Heaven", 1)
-                end
-            end)
-        end
-        task.wait(0.3)
+toggleButton.MouseButton1Click:Connect(function()
+    autoClickEnabled = not autoClickEnabled
+    
+    if autoClickEnabled then
+        toggleButton.Text = "Status: ON"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(40, 160, 80)
+        toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        toggleButton.Text = "Status: OFF"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        toggleButton.TextColor3 = Color3.fromRGB(180, 180, 180)
     end
 end)
-
--- UI COMPONENTS (KAVO)
-ClickSection:NewToggle("Auto Click", "Enables auto clicking via remote", function(state)
-    getgenv().AutoClicking = state
-end)
-
-ClickSection:NewTextBox("Click Delay (s)", "Set delay between clicks (e.g. 0.05)", function(txt)
-    local speed = tonumber(txt)
-    if speed and speed > 0 then
-        ClickDelay = speed
-    end
-end)
-
-FarmSection:NewToggle("Auto Teleport to Heaven Egg", "Teleports to Heaven Egg part 2", function(state)
-    getgenv().AutoTeleport = state
-end)
-
-FarmSection:NewToggle("Auto Hatch Heaven Egg", "Automatically hatches Heaven Egg", function(state)
-    getgenv().AutoHatch = state
-end)
-
-UISection:NewKeybind("Toggle UI", "Press key to show/hide UI", Enum.KeyCode.Insert, function()
-    Library:ToggleUI()
-end)
-
-print("Tap Simulator UI Loaded Successfully!")
