@@ -1,11 +1,11 @@
 -- Load Rayfield UI Library
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Create Main Window with "Tap Simulator" Subtitle
+-- Create Main Window
 local Window = Rayfield:CreateWindow({
-   Name = "xdaniky | Auto Clicker",
+   Name = "xdaniky | Tap Simulator",
    LoadingTitle = "Loading Tap Simulator...",
-   LoadingSubtitle = "Tap Simulator",
+   LoadingSubtitle = "Heaven Egg Automation",
    ConfigurationSaving = {
       Enabled = false,
       FolderName = nil,
@@ -27,14 +27,13 @@ local LocalPlayer = Players.LocalPlayer
 
 -- Variables
 getgenv().AutoClicking = false
-getgenv().AutoTeleport = false
-getgenv().AutoHatch = false
+getgenv().HeavenFarm = false -- 1 Tombol untuk Teleport + Hatch sekaligus
 local ClickDelay = 0.1
 local clientSequenceCounter = 2
 
 -- 1. Auto Click Function (Tap Service)
 local function SendTap()
-    local success, err = pcall(function()
+    pcall(function()
         local remoteFolder = ReplicatedStorage:WaitForChild("RemoteServices", 5)
         local tapService = remoteFolder and remoteFolder:WaitForChild("TapService", 5)
         local reFolder = tapService and tapService:WaitForChild("RE", 5)
@@ -62,38 +61,37 @@ task.spawn(function()
     end
 end)
 
--- 2. Teleport Loop Function
+-- 2. Combined Auto Teleport & Hatch Loop (Heaven Egg)
 task.spawn(function()
     while true do
-        if getgenv().AutoTeleport then
+        if getgenv().HeavenFarm then
             pcall(function()
+                -- A. Teleport to Heaven Egg part "2"
                 local eggPart = Workspace.Eggs.Heaven["2"]
                 local character = LocalPlayer.Character
                 if eggPart and character and character:FindFirstChild("HumanoidRootPart") then
                     character.HumanoidRootPart.CFrame = eggPart.CFrame + Vector3.new(0, 3, 0)
                 end
-            end)
-        end
-        task.wait(0.5)
-    end
-end)
 
--- 3. Auto Hatch Function
-task.spawn(function()
-    while true do
-        if getgenv().AutoHatch then
-            pcall(function()
-                local buyEggRemote = ReplicatedStorage:FindFirstChild("RemoteServices") 
-                    and ReplicatedStorage.RemoteServices:FindFirstChild("EggService") 
-                    and ReplicatedStorage.RemoteServices.EggService:FindFirstChild("RE") 
-                    and ReryptedStorage.RemoteServices.EggService.RE:FindFirstChild("BuyEgg")
-
-                if buyEggRemote then
-                    buyEggRemote:FireServer("Heaven", 1)
+                -- B. Try firing Egg Purchase Remote
+                local remoteFolder = ReplicatedStorage:FindFirstChild("RemoteServices")
+                if remoteFolder then
+                    -- Cek berbagai kemungkinan nama folder/remote untuk Egg
+                    local eggService = remoteFolder:FindFirstChild("EggService") or remoteFolder:FindFirstChild("Eggs")
+                    if eggService then
+                        local re = eggService:FindFirstChild("RE") or eggService:FindFirstChild("Remote") or eggService
+                        for _, child in ipairs(re:GetChildren()) do
+                            if child:IsA("RemoteEvent") then
+                                -- Fire remote dengan argumen umum pembelian telur simulator
+                                child:FireServer("Heaven", 1)
+                                child:FireServer("Heaven Egg", 1)
+                            end
+                        end
+                    end
                 end
             end)
         end
-        task.wait(0.3)
+        task.wait(0.2)
     end
 end)
 
@@ -120,22 +118,18 @@ ClickerTab:CreateSlider({
    end,
 })
 
--- Tab 2: Egg Farm
+-- Tab 2: Egg Farm (Gabungan Teleport + Hatch)
 FarmTab:CreateToggle({
-   Name = "Auto Teleport to Heaven Egg",
+   Name = "Auto Farm Heaven Egg (Teleport + Hatch)",
    CurrentValue = false,
-   Flag = "AutoTeleportToggle",
+   Flag = "HeavenFarmToggle",
    Callback = function(Value)
-      getgenv().AutoTeleport = Value
-   end,
-})
-
-FarmTab:CreateToggle({
-   Name = "Auto Hatch Heaven Egg",
-   CurrentValue = false,
-   Flag = "AutoHatchToggle",
-   Callback = function(Value)
-      getgenv().AutoHatch = Value
+      getgenv().HeavenFarm = Value
+      Rayfield:Notify({
+         Title = "Heaven Farm",
+         Content = Value and "Auto Teleport & Hatch Enabled!" or "Auto Farm Stopped",
+         Duration = 2,
+      })
    end,
 })
 
@@ -150,6 +144,11 @@ SettingsTab:CreateButton({
 -- Initial Notification
 Rayfield:Notify({
    Title = "Tap Simulator Loaded",
-   Content = "UI & All features are ready to use!",
+   Content = "Combined Egg Farm ready to use!",
    Duration = 3,
 })
+```[cite: 1, 2, 3]
+
+### Cara Cek Jika Masih Belum Mau Membuka Telur:
+1. Tekan tombol **F9** di keyboard untuk membuka *Developer Console*.
+2. Lihat apakah ada pesan atau error yang muncul saat Anda mengaktifkan toggle **Auto Farm Heaven Egg**.
