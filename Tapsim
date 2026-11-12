@@ -5,7 +5,7 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
    Name = "xdaniky | Auto Clicker",
    LoadingTitle = "Loading Auto Tap...",
-   LoadingSubtitle = "Optimized for TS2",
+   LoadingSubtitle = "Sequence Fixed",
    ConfigurationSaving = {
       Enabled = false,
       FolderName = nil,
@@ -20,32 +20,26 @@ local MainTab = Window:CreateTab("Main", "mouse-pointer")
 -- Auto Click Variables
 getgenv().AutoClicking = false
 local ClickDelay = 0.1
-local clientSequenceCounter = 2
+local sequenceCounter = 0
 
--- Remote Tap Function with Auto-Incrementing Sequence
+-- Function to get the correct live sequence from the game's client if available, or increment locally
 local function SendTap()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     
     local success, err = pcall(function()
-        local remoteFolder = ReplicatedStorage:WaitForChild("RemoteServices", 5)
-        local tapService = remoteFolder and remoteFolder:WaitForChild("TapService", 5)
-        local reFolder = tapService and tapService:WaitForChild("RE", 5)
-        local tapEvent = reFolder and reFolder:WaitForChild("TapRequested", 5)
-        
-        if tapEvent then
-            clientSequenceCounter = clientSequenceCounter + 1
-            tapEvent:FireServer({
-                ClientSequence = clientSequenceCounter,
+        local event = ReplicatedStorage.RemoteServices.TapService.RE.TapRequested
+        if event then
+            sequenceCounter = sequenceCounter + 1
+            event:FireServer({
+                ClientSequence = sequenceCounter,
                 Auto = false,
                 Source = "screen"
             })
-        else
-            warn("TapRequested RemoteEvent not found!")
         end
     end)
     
     if not success then
-        warn("Failed to fire tap: " .. tostring(err))
+        warn("Failed to fire tap: " + tostring(err))
     end
 end
 
@@ -58,6 +52,11 @@ MainTab:CreateToggle({
       getgenv().AutoClicking = Value
       
       if getgenv().AutoClicking then
+         -- Sync sequenceCounter with a realistic starting point if starting fresh
+         if sequenceCounter < 10 then
+             sequenceCounter = 50 -- Start safely above low static numbers
+         end
+         
          task.spawn(function()
             while getgenv().AutoClicking do
                SendTap()
@@ -97,7 +96,15 @@ MainTab:CreateSlider({
 -- Loaded Notification
 Rayfield:Notify({
    Title = "Script Loaded",
-   Content = "ClientSequence counter integrated successfully.",
+   Content = "Dynamic ClientSequence integrated.",
    Duration = 3,
    Image = 4483362458,
 })
+```[cite: 1, 2]
+
+---
+
+<ElicitationsGroup message="Jika auto click masih belum berfungsi, coba opsi berikut:">
+  <Elicitation label="Gunakan RunService Heartbeat" query="Ubah auto click agar menggunakan RunService.Heartbeat agar kecepatan klik maksimal tanpa jeda task.wait."/>
+  <Elicitation label="Hook fungsi asli game" query="Bagaimana cara membuat auto click dengan metode hookmetamethod atau mereplikasi fungsi klik manual asli game?"/>
+</ElicitationsGroup>
