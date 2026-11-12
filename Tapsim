@@ -1,45 +1,38 @@
--- Load Rayfield UI Library safely
-local success, Rayfield = pcall(function()
-    return loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- Memuat Kavo UI Library secara aman
+local success, Library = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 end)
 
-if not success or not Rayfield then
-    warn("Failed to load Rayfield Library! Please check your executor.")
+if not success or not Library then
+    warn("Kavo UI gagal dimuat, executor Anda mungkin memblokir HttpGet.")
     return
 end
 
--- Create Main Window with "Tap Simulator" Subtitle
-local Window = Rayfield:CreateWindow({
-   Name = "xdaniky | Auto Clicker",
-   LoadingTitle = "Loading Tap Simulator...",
-   LoadingSubtitle = "Tap Simulator",
-   ConfigurationSaving = {
-      Enabled = false,
-      FolderName = nil,
-      FileName = "TapSimulatorConfig"
-   },
-   KeySystem = false,
-})
+local Window = Library.CreateLib("xdaniky | Tap Simulator", "Sentinel")
 
--- Create Tabs
-local ClickerTab = Window:CreateTab("Auto Click", "mouse-pointer")
-local FarmTab = Window:CreateTab("Egg Farm", "egg")
-local SettingsTab = Window:CreateTab("Settings", "settings")
+-- TABS
+local ClickerTab = Window:NewTab("Auto Click")
+local FarmTab = Window:NewTab("Egg Farm")
+local SettingsTab = Window:NewTab("Settings")
 
--- Services & References
+-- SECTIONS
+local ClickSection = ClickerTab:NewSection("Clicker Controls")
+local FarmSection = FarmTab:NewSection("Heaven Egg Features")
+local UISection = SettingsTab:NewSection("UI Settings")
+
+-- VARIABLES
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
--- Variables
 getgenv().AutoClicking = false
 getgenv().AutoTeleport = false
 getgenv().AutoHatch = false
 local ClickDelay = 0.1
 local clientSequenceCounter = 2
 
--- 1. Auto Click Function (Tap Service)
+-- 1. Auto Click Function
 local function SendTap()
     pcall(function()
         local remoteFolder = ReplicatedStorage:WaitForChild("RemoteServices", 5)
@@ -81,4 +74,51 @@ task.spawn(function()
                 end
             end)
         end
-        task.
+        task.wait(0.5)
+    end
+end)
+
+-- 3. Auto Hatch Function
+task.spawn(function()
+    while true do
+        if getgenv().AutoHatch then
+            pcall(function()
+                local buyEggRemote = ReplicatedStorage:FindFirstChild("RemoteServices") 
+                    and ReplicatedStorage.RemoteServices:FindFirstChild("EggService") 
+                    and ReplicatedStorage.RemoteServices.EggService:FindFirstChild("RE") 
+                    and ReplicatedStorage.RemoteServices.EggService.RE:FindFirstChild("BuyEgg")
+
+                if buyEggRemote then
+                    buyEggRemote:FireServer("Heaven", 1)
+                end
+            end)
+        end
+        task.wait(0.3)
+    end
+end)
+
+-- UI COMPONENTS (KAVO)
+ClickSection:NewToggle("Auto Click", "Enables auto clicking via remote", function(state)
+    getgenv().AutoClicking = state
+end)
+
+ClickSection:NewTextBox("Click Delay (s)", "Set delay between clicks", function(txt)
+    local speed = tonumber(txt)
+    if speed and speed > 0 then
+        ClickDelay = speed
+    end
+end)
+
+FarmSection:NewToggle("Auto Teleport to Heaven Egg", "Teleports to Heaven Egg", function(state)
+    getgenv().AutoTeleport = state
+end)
+
+FarmSection:NewToggle("Auto Hatch Heaven Egg", "Automatically hatches Heaven Egg", function(state)
+    getgenv().AutoHatch = state
+end)
+
+UISection:NewKeybind("Toggle UI", "Press key to show/hide UI", Enum.KeyCode.Insert, function()
+    Library:ToggleUI()
+end)
+
+print("Tap Simulator UI Loaded Successfully!")
