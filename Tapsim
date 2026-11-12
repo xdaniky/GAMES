@@ -3,108 +3,65 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Create Main Window
 local Window = Rayfield:CreateWindow({
-   Name = "xdaniky | Auto Clicker",
-   LoadingTitle = "Loading Auto Tap...",
-   LoadingSubtitle = "Sequence Fixed",
+   Name = "xdaniky | Egg Hatch & Teleport",
+   LoadingTitle = "Loading Egg Automation...",
+   LoadingSubtitle = "Heaven Egg Mode",
    ConfigurationSaving = {
       Enabled = false,
       FolderName = nil,
-      FileName = "AutoTapConfig"
+      FileName = "EggConfig"
    },
    KeySystem = false,
 })
 
--- Create Main Tab
-local MainTab = Window:CreateTab("Main", "mouse-pointer")
+-- Create Tabs
+local FarmTab = Window:CreateTab("Egg Farm", "egg")
+local SettingsTab = Window:CreateTab("Settings", "settings")
 
--- Auto Click Variables
-getgenv().AutoClicking = false
-local ClickDelay = 0.1
-local sequenceCounter = 0
+-- Services & References
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
 
--- Function to get the correct live sequence from the game's client if available, or increment locally
-local function SendTap()
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    
-    local success, err = pcall(function()
-        local event = ReplicatedStorage.RemoteServices.TapService.RE.TapRequested
-        if event then
-            sequenceCounter = sequenceCounter + 1
-            event:FireServer({
-                ClientSequence = sequenceCounter,
-                Auto = false,
-                Source = "screen"
-            })
+-- Variables
+getgenv().AutoTeleport = false
+getgenv().AutoHatch = false
+local hatchAmount = "1" -- Default hatch count (1 or 3 depending on game passes/features)
+
+-- Target Egg Paths based on your details
+local function getEggModel()
+    local eggsFolder = Workspace:FindFirstChild("Eggs")
+    if eggsFolder then
+        local heavenFolder = eggsFolder:FindFirstChild("Heaven")
+        if heavenFolder then
+            return heavenFolder:FindFirstChild("Egg")
         end
-    end)
-    
-    if not success then
-        warn("Failed to fire tap: " + tostring(err))
     end
+    return nil
 end
 
--- Auto Click Toggle
-MainTab:CreateToggle({
-   Name = "Auto Click",
-   CurrentValue = false,
-   Flag = "AutoClickToggle",
-   Callback = function(Value)
-      getgenv().AutoClicking = Value
-      
-      if getgenv().AutoClicking then
-         -- Sync sequenceCounter with a realistic starting point if starting fresh
-         if sequenceCounter < 10 then
-             sequenceCounter = 50 -- Start safely above low static numbers
-         end
-         
-         task.spawn(function()
-            while getgenv().AutoClicking do
-               SendTap()
-               task.wait(ClickDelay)
-            end
-         end)
-         Rayfield:Notify({
-            Title = "Auto Click",
-            Content = "Auto Click Enabled",
-            Duration = 2,
-            Image = 4483362458,
-         })
-      else
-         Rayfield:Notify({
-            Title = "Auto Click",
-            Content = "Auto Click Disabled",
-            Duration = 2,
-            Image = 4483362458,
-         })
-      end
-   end,
-})
+local function getEggTeleportPart()
+    local eggsFolder = Workspace:FindFirstChild("Eggs")
+    if eggsFolder then
+        local heavenFolder = eggsFolder:FindFirstChild("Heaven")
+        if heavenFolder then
+            return heavenFolder:FindFirstChild("2")
+        end
+    end
+    return nil
+end
 
--- Click Delay Slider
-MainTab:CreateSlider({
-   Name = "Click Delay (Seconds)",
-   Range = {0.01, 1},
-   Increment = 0.01,
-   Suffix = "s",
-   CurrentValue = 0.1,
-   Flag = "ClickDelaySlider",
-   Callback = function(Value)
-      ClickDelay = Value
-   end,
-})
-
--- Loaded Notification
-Rayfield:Notify({
-   Title = "Script Loaded",
-   Content = "Dynamic ClientSequence integrated.",
-   Duration = 3,
-   Image = 4483362458,
-})
-```[cite: 1, 2]
-
----
-
-<ElicitationsGroup message="Jika auto click masih belum berfungsi, coba opsi berikut:">
-  <Elicitation label="Gunakan RunService Heartbeat" query="Ubah auto click agar menggunakan RunService.Heartbeat agar kecepatan klik maksimal tanpa jeda task.wait."/>
-  <Elicitation label="Hook fungsi asli game" query="Bagaimana cara membuat auto click dengan metode hookmetamethod atau mereplikasi fungsi klik manual asli game?"/>
-</ElicitationsGroup>
+-- Teleport Loop Function
+task.spawn(function()
+    while true do
+        if getgenv().AutoTeleport then
+            local success, err = pcall(function()
+                local eggPart = getEggTeleportPart()
+                local character = LocalPlayer.Character
+                if eggPart and character and character:FindFirstChild("HumanoidRootPart") then
+                    -- Teleport slightly above or directly to the target part
+                    character.HumanoidRootPart.CFrame = eggPart.CFrame + Vector3.new(0, 3, 0)
+                end
+            end)
+            if not success then
