@@ -1,10 +1,11 @@
--- Autoclick UI Minimalis (Toggle)
+-- Autoclick UI Minimalis (Toggle) - TapRequested
 -- Jenis  : LocalScript
 -- Letak  : StarterPlayer > StarterPlayerScripts
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 
@@ -12,13 +13,19 @@ local player = Players.LocalPlayer
 local DEFAULT_INTERVAL = 0.1
 local MIN_INTERVAL = 0.03
 
+-- ===== Remote =====
+local TapEvent = ReplicatedStorage
+	:WaitForChild("RemoteServices")
+	:WaitForChild("TapService")
+	:WaitForChild("RE")
+	:WaitForChild("TapRequested")
+
 -- ===== Aksi klik =====
+-- Jika TapController mengirim argumen, tambahkan di dalam FireServer(...)
 local function doClick()
-	local char = player.Character
-	local tool = char and char:FindFirstChildOfClass("Tool")
-	if tool then
-		tool:Activate()
-	end
+	pcall(function()
+		TapEvent:FireServer()
+	end)
 end
 
 -- ===== Warna =====
