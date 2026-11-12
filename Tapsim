@@ -1,0 +1,91 @@
+-- Load Rayfield UI Library
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- Create Main Window
+local Window = Rayfield:CreateWindow({
+   Name = "Auto Clicker",
+   LoadingTitle = "Loading Script...",
+   LoadingSubtitle = "Minimalist UI",
+   ConfigurationSaving = {
+      Enabled = false,
+      FolderName = nil,
+      FileName = "AutoTapConfig"
+   },
+   KeySystem = false,
+})
+
+-- Create Main Tab
+local MainTab = Window:CreateTab("Main", "mouse-pointer")
+
+-- Auto Click Variables
+getgenv().AutoClicking = false
+local ClickDelay = 0.1
+
+-- Remote Tap Function
+local function SendTap()
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local success, err = pcall(function()
+        local Event = ReplicatedStorage.RemoteServices.TapService.RE.TapRequested
+        Event:FireServer({
+            ClientSequence = 2,
+            Auto = false,
+            Source = "screen"
+        })
+    end)
+    if not success then
+        warn("Tap request failed: " .. tostring(err))
+    end
+end
+
+-- Auto Click Toggle
+MainTab:CreateToggle({
+   Name = "Auto Click",
+   CurrentValue = false,
+   Flag = "AutoClickToggle",
+   Callback = function(Value)
+      getgenv().AutoClicking = Value
+      
+      if getgenv().AutoClicking then
+         task.spawn(function()
+            while getgenv().AutoClicking do
+               SendTap()
+               task.wait(ClickDelay)
+            end
+         end)
+         Rayfield:Notify({
+            Title = "Auto Click",
+            Content = "Auto Click Enabled",
+            Duration = 2,
+            Image = 4483362458,
+         })
+      else
+         Rayfield:Notify({
+            Title = "Auto Click",
+            Content = "Auto Click Disabled",
+            Duration = 2,
+            Image = 4483362458,
+         })
+      end
+   end,
+})
+
+-- Click Delay Slider
+MainTab:CreateSlider({
+   Name = "Click Delay (Seconds)",
+   Range = {0.01, 1},
+   Increment = 0.01,
+   Suffix = "s",
+   CurrentValue = 0.1,
+   Flag = "ClickDelaySlider",
+   Callback = function(Value)
+      ClickDelay = Value
+   end,
+})
+
+-- Loaded Notification
+Rayfield:Notify({
+   Title = "Script Loaded",
+   Content = "Minimalist Rayfield UI is ready.",
+   Duration = 3,
+   Image = 4483362458,
+})
