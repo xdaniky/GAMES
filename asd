@@ -1,116 +1,170 @@
+-- Autoclick UI Minimalis (Toggle)
+-- Jenis  : LocalScript
+-- Letak  : StarterPlayer > StarterPlayerScripts
+
 local Players = game:GetService("Players")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local UserInputService = game:GetService("UserInputService")
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
-local targetParent = (gethui and gethui()) or game:GetService("CoreGui")
 
-if targetParent:FindFirstChild("MinimalAutoClicker") then
-    targetParent.MinimalAutoClicker:Destroy()
+-- ===== Pengaturan =====
+local DEFAULT_INTERVAL = 0.1
+local MIN_INTERVAL = 0.03
+
+-- ===== Aksi klik =====
+local function doClick()
+	local char = player.Character
+	local tool = char and char:FindFirstChildOfClass("Tool")
+	if tool then
+		tool:Activate()
+	end
 end
 
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "MinimalAutoClicker"
-screenGui.ResetOnSpawn = false
-screenGui.DisplayOrder = 999999
-screenGui.Parent = targetParent
+-- ===== Warna =====
+local BG = Color3.fromRGB(17, 17, 17)
+local FIELD = Color3.fromRGB(28, 28, 28)
+local TEXT = Color3.fromRGB(230, 230, 230)
+local MUTED = Color3.fromRGB(130, 130, 130)
+local ACCENT = Color3.fromRGB(74, 222, 128)
+local OFF = Color3.fromRGB(55, 55, 55)
 
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 200, 0, 90)
-mainFrame.Position = UDim2.new(0.5, -100, 0.8, -45)
-mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-mainFrame.BorderSizePixel = 0
-mainFrame.Parent = screenGui
+-- ===== UI =====
+local gui = Instance.new("ScreenGui")
+gui.Name = "AutoclickUI"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
 
-local uiCorner = Instance.new("UICorner")
-uiCorner.CornerRadius = UDim.new(0, 8)
-uiCorner.Parent = mainFrame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.fromOffset(180, 112)
+frame.Position = UDim2.new(0, 20, 0.5, -56)
+frame.BackgroundColor3 = BG
+frame.BorderSizePixel = 0
+frame.Parent = gui
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
 
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, 0, 0, 30)
-titleLabel.BackgroundTransparency = 1
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.Text = "Auto Clicker"
-titleLabel.TextColor3 = Color3.fromRGB(240, 240, 240)
-titleLabel.TextSize = 14
-titleLabel.Parent = mainFrame
+local function makeLabel(text, size, pos, color, font, align)
+	local l = Instance.new("TextLabel")
+	l.BackgroundTransparency = 1
+	l.Size = size
+	l.Position = pos
+	l.Text = text
+	l.TextColor3 = color
+	l.Font = font or Enum.Font.Gotham
+	l.TextSize = 12
+	l.TextXAlignment = align or Enum.TextXAlignment.Center
+	l.Parent = frame
+	return l
+end
 
-local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.new(0.85, 0, 0, 35)
-toggleButton.Position = UDim2.new(0.075, 0, 0.45, 0)
-toggleButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-toggleButton.BorderSizePixel = 0
-toggleButton.AutoButtonColor = false
-toggleButton.Font = Enum.Font.GothamMedium
-toggleButton.Text = "Status: OFF"
-toggleButton.TextColor3 = Color3.fromRGB(180, 180, 180)
-toggleButton.TextSize = 13
-toggleButton.Parent = mainFrame
+local title = makeLabel("Autoclick", UDim2.new(1, 0, 0, 26), UDim2.new(0, 0, 0, 0), MUTED, Enum.Font.GothamMedium)
+title.Active = true
 
-local btnCorner = Instance.new("UICorner")
-btnCorner.CornerRadius = UDim.new(0, 6)
-btnCorner.Parent = toggleButton
+makeLabel("Interval (detik)", UDim2.new(0, 100, 0, 22), UDim2.new(0, 12, 0, 30), MUTED, nil, Enum.TextXAlignment.Left)
+local box = Instance.new("TextBox")
+box.Size = UDim2.fromOffset(52, 22)
+box.Position = UDim2.new(1, -64, 0, 30)
+box.BackgroundColor3 = FIELD
+box.BorderSizePixel = 0
+box.Text = tostring(DEFAULT_INTERVAL)
+box.TextColor3 = TEXT
+box.Font = Enum.Font.Gotham
+box.TextSize = 12
+box.ClearTextOnFocus = false
+box.Parent = frame
+Instance.new("UICorner", box).CornerRadius = UDim.new(0, 5)
 
--- Sistem Dragging Manual (Aman untuk klik tombol)
-local dragging, dragInput, dragStart, startPos
-mainFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = mainFrame.Position
-    end
+makeLabel("Aktif", UDim2.new(0, 100, 0, 24), UDim2.new(0, 12, 0, 62), TEXT, nil, Enum.TextXAlignment.Left)
+
+local track = Instance.new("TextButton")
+track.Size = UDim2.fromOffset(44, 22)
+track.Position = UDim2.new(1, -56, 0, 63)
+track.BackgroundColor3 = OFF
+track.BorderSizePixel = 0
+track.Text = ""
+track.AutoButtonColor = false
+track.Parent = frame
+Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
+
+local knob = Instance.new("Frame")
+knob.Size = UDim2.fromOffset(16, 16)
+knob.Position = UDim2.fromOffset(3, 3)
+knob.BackgroundColor3 = TEXT
+knob.BorderSizePixel = 0
+knob.Parent = track
+Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+local status = makeLabel("Siap", UDim2.new(1, 0, 0, 20), UDim2.new(0, 0, 1, -24), MUTED)
+
+-- ===== Logika =====
+local running = false
+local count = 0
+local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad)
+
+local function getInterval()
+	local n = tonumber(box.Text) or DEFAULT_INTERVAL
+	n = math.max(MIN_INTERVAL, n)
+	box.Text = tostring(n)
+	return n
+end
+
+local function setRunning(state)
+	running = state
+
+	TweenService:Create(track, tweenInfo, {
+		BackgroundColor3 = running and ACCENT or OFF,
+	}):Play()
+	TweenService:Create(knob, tweenInfo, {
+		Position = running and UDim2.fromOffset(25, 3) or UDim2.fromOffset(3, 3),
+	}):Play()
+
+	if running then
+		count = 0
+		status.Text = "Berjalan"
+		local interval = getInterval()
+		task.spawn(function()
+			while running do
+				doClick()
+				count += 1
+				status.Text = "Berjalan • " .. count .. " klik"
+				task.wait(interval)
+			end
+		end)
+	else
+		status.Text = "Berhenti • " .. count .. " klik"
+	end
+end
+
+track.MouseButton1Click:Connect(function()
+	setRunning(not running)
 end)
 
-mainFrame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
+-- ===== Drag jendela =====
+local dragging, dragStart, startPos
+
+title.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+	end
 end)
 
-UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        local delta = input.Position - dragStart
-        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
+UIS.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch) then
+		local d = input.Position - dragStart
+		frame.Position = UDim2.new(
+			startPos.X.Scale, startPos.X.Offset + d.X,
+			startPos.Y.Scale, startPos.Y.Offset + d.Y
+		)
+	end
 end)
 
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
-    end
-end)
-
--- Logika Auto Clicker
-local autoClickEnabled = false
-local clickDelay = 0.05
-
-task.spawn(function()
-    while true do
-        if autoClickEnabled then
-            pcall(function()
-                if mouse1click then
-                    mouse1click()
-                else
-                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-                    task.wait()
-                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
-                end
-            end)
-        end
-        task.wait(clickDelay)
-    end
-end)
-
-toggleButton.Activated:Connect(function()
-    autoClickEnabled = not autoClickEnabled
-    
-    if autoClickEnabled then
-        toggleButton.Text = "Status: ON"
-        toggleButton.BackgroundColor3 = Color3.fromRGB(40, 160, 80)
-        toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    else
-        toggleButton.Text = "Status: OFF"
-        toggleButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-        toggleButton.TextColor3 = Color3.fromRGB(180, 180, 180)
-    end
+UIS.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
 end)
