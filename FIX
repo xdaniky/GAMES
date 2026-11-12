@@ -1,0 +1,245 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+
+if CoreGui:FindFirstChild("XdanikyHub") then
+    CoreGui.XdanikyHub:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "XdanikyHub"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+MainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+MainFrame.Size = UDim2.new(0, 400, 0, 320)
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = MainFrame
+
+local TitleBar = Instance.new("TextLabel")
+TitleBar.Parent = MainFrame
+TitleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+TitleBar.Size = UDim2.new(1, 0, 0, 40)
+TitleBar.Font = Enum.Font.GothamBold
+TitleBar.Text = "  Xdaniky HUB : Tap Simulator"
+TitleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleBar.TextSize = 16
+TitleBar.TextXAlignment = Enum.TextXAlignment.Left
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 10)
+TitleCorner.Parent = TitleBar
+
+local CloseButton = Instance.new("TextButton")
+CloseButton.Parent = TitleBar
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseButton.Position = UDim2.new(1, -35, 0.5, -12)
+CloseButton.Size = UDim2.new(0, 25, 0, 25)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextSize = 14
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 5)
+CloseCorner.Parent = CloseButton
+
+local ContentFrame = Instance.new("ScrollingFrame")
+ContentFrame.Parent = MainFrame
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Position = UDim2.new(0, 10, 0, 50)
+ContentFrame.Size = UDim2.new(1, -20, 1, -60)
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 400)
+ContentFrame.ScrollBarThickness = 4
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = ContentFrame
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 10)
+
+local function CreateLabel(text)
+    local lbl = Instance.new("TextLabel")
+    lbl.Parent = ContentFrame
+    lbl.BackgroundTransparency = 1
+    lbl.Size = UDim2.new(1, 0, 0, 25)
+    lbl.Font = Enum.Font.GothamBold
+    lbl.Text = text
+    lbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+    lbl.TextSize = 14
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+end
+
+local function CreateToggle(name, callback)
+    local btn = Instance.new("TextButton")
+    btn.Parent = ContentFrame
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    btn.Size = UDim2.new(1, 0, 0, 40)
+    btn.Font = Enum.Font.Gotham
+    btn.Text = "  " .. name .. ": [ OFF ]"
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 14
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+    
+    local toggled = false
+    btn.MouseButton1Click:Connect(function()
+        toggled = not toggled
+        if toggled then
+            btn.BackgroundColor3 = Color3.fromRGB(40, 160, 80)
+            btn.Text = "  " .. name .. ": [ ON ]"
+        else
+            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+            btn.Text = "  " .. name .. ": [ OFF ]"
+        end
+        callback(toggled)
+    end)
+end
+
+getgenv().AutoClicking = false
+getgenv().AutoFarmEgg = false
+local clientSequenceCounter = 2
+
+local eggNames = {}
+local eggObjects = {}
+local selectedEgg = nil
+
+local function ScanEggs()
+    table.clear(eggNames)
+    table.clear(eggObjects)
+    local eggsFolder = Workspace:FindFirstChild("Eggs")
+    if eggsFolder then
+        for _, item in ipairs(eggsFolder:GetChildren()) do
+            if item:IsA("Folder") or item:IsA("Model") then
+                local name = item.Name
+                if name ~= "30M Visits" and (item:FindFirstChild("Egg") or item:FindFirstChild("PriceTag") or item:FindFirstChild("1") or item:FindFirstChild("2")) then
+                    table.insert(eggNames, name)
+                    eggObjects[name] = item
+                end
+            end
+        end
+    end
+    table.sort(eggNames)
+    if #eggNames == 0 then
+        table.insert(eggNames, "None Found")
+    end
+    selectedEgg = eggNames[1]
+end
+ScanEggs()
+
+local function SendTap()
+    pcall(function()
+        local remoteFolder = ReplicatedStorage:WaitForChild("RemoteServices", 5)
+        local tapService = remoteFolder and remoteFolder:WaitForChild("TapService", 5)
+        local reFolder = tapService and tapService:WaitForChild("RE", 5)
+        local tapEvent = reFolder and reFolder:WaitForChild("TapRequested", 5)
+        
+        if tapEvent then
+            clientSequenceCounter = clientSequenceCounter + 1
+            tapEvent:FireServer({
+                ClientSequence = clientSequenceCounter,
+                Auto = false,
+                Source = "screen"
+            })
+        end
+    end)
+end
+
+task.spawn(function()
+    while true do
+        if getgenv().AutoClicking then
+            SendTap()
+            task.wait(0.1)
+        else
+            task.wait(0.1)
+        end
+    end
+end)
+
+local lastTeleportedEgg = nil
+task.spawn(function()
+    while true do
+        if getgenv().AutoFarmEgg and selectedEgg then
+            pcall(function()
+                local targetEggFolder = eggObjects[selectedEgg]
+                if targetEggFolder then
+                    if lastTeleportedEgg ~= selectedEgg then
+                        local tpPart = targetEggFolder:FindFirstChild("2") 
+                            or targetEggFolder:FindFirstChild("1") 
+                            or targetEggFolder:FindFirstChild("PriceTag")
+                        
+                        local character = LocalPlayer.Character
+                        if tpPart and tpPart:IsA("BasePart") and character and character:FindFirstChild("HumanoidRootPart") then
+                            character.HumanoidRootPart.CFrame = tpPart.CFrame + Vector3.new(0, 3, 0)
+                            lastTeleportedEgg = selectedEgg
+                            task.wait(0.5)
+                        end
+                    end
+
+                    for _, desc in ipairs(targetEggFolder:GetDescendants()) do
+                        if desc:IsA("ProximityPrompt") then
+                            if fireproximityprompt then fireproximityprompt(desc) end
+                        end
+                    end
+
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+                    task.wait(0.05)
+                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+                end
+            end)
+        else
+            lastTeleportedEgg = nil
+        end
+        task.wait(0.2)
+    end
+end)
+
+CreateLabel("--- AUTO CLICKER ---")
+CreateToggle("Auto Click", function(state)
+    getgenv().AutoClicking = state
+end)
+
+CreateLabel("--- EGG FARMING ---")
+
+local DropdownButton = Instance.new("TextButton")
+DropdownButton.Parent = ContentFrame
+DropdownButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+DropdownButton.Size = UDim2.new(1, 0, 0, 40)
+DropdownButton.Font = Enum.Font.Gotham
+DropdownButton.Text = "  Telur: " .. tostring(selectedEgg)
+DropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+DropdownButton.TextSize = 14
+DropdownButton.TextXAlignment = Enum.TextXAlignment.Left
+
+local DropCorner = Instance.new("UICorner")
+DropCorner.CornerRadius = UDim.new(0, 6)
+DropCorner.Parent = DropdownButton
+
+local eggIndex = 1
+DropdownButton.MouseButton1Click:Connect(function()
+    eggIndex = eggIndex + 1
+    if eggIndex > #eggNames then eggIndex = 1 end
+    selectedEgg = eggNames[eggIndex]
+    DropdownButton.Text = "  Telur: " .. tostring(selectedEgg)
+    lastTeleportedEgg = nil
+end)
+
+CreateToggle("Auto Hatch (Teleport + Spam F)", function(state)
+    getgenv().AutoFarmEgg = state
+    lastTeleportedEgg = nil
+end)
