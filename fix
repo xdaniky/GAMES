@@ -4,7 +4,6 @@ local success, Rayfield = pcall(function()
 end)
 
 if not success or not Rayfield then
-    -- Link cadangan jika link utama sedang gangguan
     Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
 end
 
@@ -21,9 +20,9 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false,
 })
 
--- Create Tabs
-local ClickerTab = Window:CreateTab("Auto Click", "mouse-pointer")
-local FarmTab = Window:CreateTab("Egg Farm", "egg")
+-- Create Tabs (Nama tab pertama diubah jadi "Auto Farm")
+local FarmTab1 = Window:CreateTab("Auto Farm", "mouse-pointer")
+local FarmTab2 = Window:CreateTab("Egg Farm", "egg")
 local SettingsTab = Window:CreateTab("Settings", "settings")
 
 -- Services & References
@@ -43,7 +42,7 @@ local clientSequenceCounter = 2
 local eggNames = {}
 local eggObjects = {}
 
--- 1. Auto Click Function (Tap Service)
+-- 1. Auto Click / Farm Function (Tap Service)
 local function SendTap()
     pcall(function()
         local remoteFolder = ReplicatedStorage:WaitForChild("RemoteServices", 5)
@@ -73,7 +72,7 @@ task.spawn(function()
     end
 end)
 
--- 2. Fungsi Scan Telur Berdasarkan Struktur Workspace.Eggs Anda
+-- 2. Fungsi Scan Telur Berdasarkan Struktur Workspace.Eggs
 local function ScanEggs()
     table.clear(eggNames)
     table.clear(eggObjects)
@@ -110,7 +109,6 @@ task.spawn(function()
             pcall(function()
                 local targetEggFolder = eggObjects[getgenv().SelectedEgg]
                 if targetEggFolder then
-                    -- Teleport 1x saja saat mulai atau mengganti telur
                     if lastTeleportedEgg ~= getgenv().SelectedEgg then
                         local tpPart = targetEggFolder:FindFirstChild("2") 
                             or targetEggFolder:FindFirstChild("1") 
@@ -124,7 +122,6 @@ task.spawn(function()
                         end
                     end
 
-                    -- Trigger ProximityPrompt jika ada
                     for _, desc in ipairs(targetEggFolder:GetDescendants()) do
                         if desc:IsA("ProximityPrompt") then
                             if fireproximityprompt then
@@ -133,7 +130,6 @@ task.spawn(function()
                         end
                     end
 
-                    -- Simulasi menekan tombol "F" secara otomatis untuk membuka/menyalakan Auto Hatch game
                     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
                     task.wait(0.05)
                     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
@@ -147,17 +143,17 @@ task.spawn(function()
 end)
 
 -- UI COMPONENTS (Rayfield Style)
-ClickerTab:CreateToggle({
-   Name = "Auto Click",
+FarmTab1:CreateToggle({
+   Name = "Auto Farm",
    CurrentValue = false,
-   Flag = "AutoClickToggle",
+   Flag = "AutoFarmToggleClick",
    Callback = function(Value)
       getgenv().AutoClicking = Value
    end,
 })
 
-ClickerTab:CreateSlider({
-   Name = "Click Delay (Seconds)",
+FarmTab1:CreateSlider({
+   Name = "Farm Delay (Seconds)",
    Range = {0.01, 1},
    Increment = 0.01,
    Suffix = "s",
@@ -168,7 +164,7 @@ ClickerTab:CreateSlider({
    end,
 })
 
-local EggDropdown = FarmTab:CreateDropdown({
+local EggDropdown = FarmTab2:CreateDropdown({
    Name = "Pilih Telur",
    Options = eggNames,
    CurrentOption = {eggNames[1] or "None Found"},
@@ -184,7 +180,7 @@ local EggDropdown = FarmTab:CreateDropdown({
    end,
 })
 
-FarmTab:CreateToggle({
+FarmTab2:CreateToggle({
    Name = "Auto Hatch (Teleport + Spam F)",
    CurrentValue = false,
    Flag = "AutoFarmToggle",
@@ -199,7 +195,7 @@ FarmTab:CreateToggle({
    end,
 })
 
-FarmTab:CreateButton({
+FarmTab2:CreateButton({
    Name = "Refresh Daftar Telur",
    Callback = function()
       ScanEggs()
@@ -221,6 +217,6 @@ SettingsTab:CreateButton({
 
 Rayfield:Notify({
    Title = "Xdaniky HUB Loaded",
-   Content = "UI Rayfield aktif kembali!",
+   Content = "Menu Auto Farm siap digunakan!",
    Duration = 3,
 })
