@@ -39,6 +39,7 @@ getgenv().AutoFarmEgg = false
 getgenv().AutoBreakableActive = false
 getgenv().AutoClaimPetIndexActive = false
 getgenv().AutoEquipBestActive = false
+getgenv().AutoClaimQuestActive = false
 getgenv().AutoRebirthActive = false
 getgenv().AntiAfkActive = false
 
@@ -284,7 +285,6 @@ local function EquipBestPets()
         if reFolder then
             local petAction = reFolder:FindFirstChild("PetActionRequested")
             if petAction then
-                -- Mengirim parameter aksi untuk equip best pet
                 petAction:FireServer("EquipBest")
                 petAction:FireServer({ Action = "EquipBest" })
                 petAction:FireServer("Equip Best")
@@ -298,11 +298,45 @@ task.spawn(function()
         if getgenv().AutoEquipBestActive then
             EquipBestPets()
         end
-        task.wait(5) -- Pengecekan otomatis setiap 5 detik (berguna jika baru menetas pet baru)
+        task.wait(5)
     end
 end)
 
--- 7. Sistem Auto Rebirth
+-- 7. Fungsi & Sistem Auto Claim Quest (QuestService.RF)
+local function ClaimAllQuests()
+    pcall(function()
+        local questService = ReplicatedStorage:FindFirstChild("RemoteServices") 
+            and ReplicatedStorage.RemoteServices:FindFirstChild("QuestService")
+        local rfFolder = questService and questService:FindFirstChild("RF")
+        
+        if rfFolder then
+            for _, rf in ipairs(rfFolder:GetChildren()) do
+                if rf:IsA("RemoteFunction") then
+                    -- Jalankan di thread terpisah agar InvokeServer tidak menahan loop jika server lambat merespons
+                    task.spawn(function()
+                        pcall(function() rf:InvokeServer() end)
+                        for i = 1, 10 do
+                            pcall(function() rf:InvokeServer(i) end)
+                            pcall(function() rf:InvokeServer({ Index = i }) end)
+                            pcall(function() rf:InvokeServer({ QuestId = i }) end)
+                        end
+                    end)
+                end
+            end
+        end
+    end)
+end
+
+task.spawn(function()
+    while true do
+        if getgenv().AutoClaimQuestActive then
+            ClaimAllQuests()
+        end
+        task.wait(5) -- Pengecekan klaim quest setiap 5 detik
+    end
+end)
+
+-- 8. Sistem Auto Rebirth
 task.spawn(function()
     while true do
         if getgenv().AutoRebirthActive then
@@ -328,7 +362,7 @@ task.spawn(function()
     end
 end)
 
--- 8. Sistem Anti-AFK
+-- 9. Sistem Anti-AFK
 local vu = game:GetService("VirtualUser")
 LocalPlayer.Idled:Connect(function()
     if getgenv().AntiAfkActive then
@@ -390,7 +424,6 @@ FarmTab:CreateButton({
    end,
 })
 
--- Komponen Auto Equip Best Pet di dalam menu Auto Farm
 FarmTab:CreateToggle({
    Name = "Auto Equip Best Pets",
    CurrentValue = false,
@@ -410,6 +443,31 @@ FarmTab:CreateButton({
       Rayfield:Notify({
          Title = "Pet System",
          Content = "Berhasil meng-equip pet terkuat!",
+         Duration = 2,
+      })
+   end,
+})
+
+-- Komponen Auto Claim Quest di dalam menu Auto Farm
+FarmTab:CreateToggle({
+   Name = "Auto Claim Quests",
+   CurrentValue = false,
+   Flag = "AutoClaimQuestToggle",
+   Callback = function(Value)
+      getgenv().AutoClaimQuestActive = Value
+      if Value then
+          ClaimAllQuests()
+      end
+   end,
+})
+
+FarmTab:CreateButton({
+   Name = "Claim All Quests Now",
+   Callback = function()
+      ClaimAllQuests()
+      Rayfield:Notify({
+         Title = "Quest System",
+         Content = "Permintaan klaim quest dikirim!",
          Duration = 2,
       })
    end,
@@ -498,6 +556,6 @@ SettingsTab:CreateButton({
 
 Rayfield:Notify({
    Title = "Xdaniky HUB Loaded",
-   Content = "Auto Equip Best & Pet Index Claim Siap!",
+   Content = "Auto Claim Quest & Semua Fitur Siap!",
    Duration = 3,
 })
