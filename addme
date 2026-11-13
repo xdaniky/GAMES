@@ -1,561 +1,104 @@
--- Load Rayfield UI Library dengan link alternatif yang stabil
-local success, Rayfield = pcall(function()
-    return loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-end)
+getgenv().VO_CONFIG = {
+    -- === HUB / AUTH ===
+    HubKey = "nruKK3l-5HB5laqSFjkpnbTJo6QGkj6C720iHqvoYTA",
+    DeviceName = "",
 
-if not success or not Rayfield then
-    Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
-end
+    -- === MAIN FARM (choose one mode) ===
+    PotFarm = true,
+    EggFarm = false,
+    PetFarm = false, -- Third mode: farm pets from PetFarmList in order (natural task-aging)
+    EggBuy = false, -- If true (default): buy an egg when none in inventory. If false: no target eggs -> switch to PotFarm
+    KeepEggFarm = false, -- If true, will keep trying to hatch eggs even when no bucks
+    KeepPetFarm = false, -- If true, will switch back when PetFarmList targets appear
+    EggName = {"Egg Name"},  -- Priority order: first egg tried, then second, etc.
+    PetFarmList = {}, -- Ordered pet names: age all non-FG of first name, then second, etc.; fallback if none available
+    Farm2DEvent = true,
+    PrioritizePet = "",
 
--- Create Main Window
-local Window = Rayfield:CreateWindow({
-   Name = "Xdaniky HUB : Tap Simulator",
-   LoadingTitle = "Xdaniky HUB",
-   LoadingSubtitle = "By Xdaniky",
-   ConfigurationSaving = {
-      Enabled = false,
-      FolderName = nil,
-      FileName = "XdanikyHubConfig"
-   },
-   KeySystem = false,
-})
+    -- === PET PEN ===
+    PetPen = false,
+    CustomPenEggs = {"Egg Name"},
+    CustomPenPets = {},
+    PrioritizePetPenTypes = {},  -- "Egg", "Normal", "Neon" (empty = all)
 
--- Create Tabs
-local FarmTab = Window:CreateTab("Auto Farm", "mouse-pointer")
-local FarmTab2 = Window:CreateTab("Egg Farm", "egg")
-local RebirthTab = Window:CreateTab("Rebirth", "refresh-cw")
-local SettingsTab = Window:CreateTab("Settings", "settings")
+    -- === PET RELEASER ===
+    PetReleaser = false,
+    ReleasePets = {},       -- Whitelist: names to release (empty = all)
+    ExcludeReleasePets = {}, -- Blacklist: base names or prefixed like ReleasePets ("Neon Dog", "Normal Cat", "Mega FG X")
+    ReleaseTypes = {},      -- "Mega", "Neon", "Normal" (empty = all)
+    ReleaseRarities = {},   -- If ReleasePets non-empty: only used for pets NOT named in ReleasePets. If ReleasePets empty: filters all candidates.
+    ExcludeRarities = {},   -- Blacklist rarities (pets on ReleasePets by name bypass this)
 
--- Services & References
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local LocalPlayer = Players.LocalPlayer
+    -- === AGE PETS ===
+    AgePets = false,
+    AgePetsNames = {},
+    AgePetsTypes = {"Normal"},  -- "Normal", "Neon", "ALL"
 
--- Variables
-getgenv().AutoClicking = false
-getgenv().AutoFarmEgg = false
-getgenv().AutoBreakableActive = false
-getgenv().AutoClaimPetIndexActive = false
-getgenv().AutoEquipBestActive = false
-getgenv().AutoClaimQuestActive = false
-getgenv().AutoRebirthActive = false
-getgenv().AntiAfkActive = false
+    -- === AUTO FUSE ===
+    AutoFuse = false,
+    AutoFuseBlacklist = {}, -- Pet names to never include in neon/mega fusion
 
-local ClickDelay = 0.1
-local BreakableDelay = 0.15
-local clientSequenceCounter = 2
-local selectedRebirthIndex = 1
+    -- === BUY PETS ===
+    BuyPets = false,
+    BuyPetName = {"Pet Name", "Pet Name 2"},  -- Loops in order, buys all of first pet then moves to next
 
-local eggNames = {}
-local eggObjects = {}
-local cachedEggPrices = {}
+    -- === STAR REWARDS SHOP ===
+    BuyStarRewards = false,
+    StarRewardBuyList = {"Gemstone Egg"},
 
--- 1. Auto Click / Farm Function (Tap Service)
-local function SendTap()
-    pcall(function()
-        local remoteFolder = ReplicatedStorage:WaitForChild("RemoteServices", 5)
-        local tapService = remoteFolder and remoteFolder:WaitForChild("TapService", 5)
-        local reFolder = tapService and tapService:WaitForChild("RE", 5)
-        local tapEvent = reFolder and reFolder:WaitForChild("TapRequested", 5)
-        
-        if tapEvent then
-            clientSequenceCounter = clientSequenceCounter + 1
-            tapEvent:FireServer({
-                ClientSequence = clientSequenceCounter,
-                Auto = false,
-                Source = "screen"
-            })
-        end
-    end)
-end
+    -- === BOXES ===
+    BuyBoxes = false,
+    BoxName = {"Box Name"},   -- Boxes to buy when BuyBoxes is true
+    OpenBoxes = {"Box Name"}, -- Box names to open from inventory
 
-task.spawn(function()
-    while true do
-        if getgenv().AutoClicking then
-            SendTap()
-            task.wait(ClickDelay)
-        else
-            task.wait(0.1)
-        end
-    end
-end)
+    -- === LURE ===
+    BaitName = "Storm Chip Cookie Bait", -- "Storm Chip Cookie Bait" or "Cyclone Sponge Bait"
+    LightningFarm = true,
 
--- 2. Fungsi Scan Telur & Harga (Dengan Cache Memory)
-local function ScanEggs()
-    local eggsFolder = Workspace:FindFirstChild("Eggs")
-    if eggsFolder then
-        local success, children = pcall(function() return eggsFolder:GetChildren() end)
-        if success and children then
-            for _, item in ipairs(children) do
-                if item:IsA("Folder") or item:IsA("Model") then
-                    local name = item.Name
-                    if name ~= "30M Visits" then
-                        local priceText = ""
-                        for _, desc in ipairs(item:GetDescendants()) do
-                            if desc:IsA("TextLabel") and (desc.Text:match("%d") or desc.Text:match("K") or desc.Text:match("M") or desc.Text:match("B") or desc.Text:match("QD")) then
-                                if not desc.Text:match("%%") and #desc.Text < 15 then
-                                    priceText = desc.Text
-                                    break
-                                end
-                            end
-                        end
-                        
-                        if priceText ~= "" then
-                            cachedEggPrices[name] = priceText
-                        end
-                    end
-                end
-            end
-        end
-    end
+    -- === AUTO TRADE ===
+    AutoTrade = false,
+    ReceiverUsernames = {},
+    TradeItemList = {
+         pets = {"Dog","Neon Cat"}
+    }, -- Per category: { pets = {"Dog","Neon Cat"}, food = {}, toys = {}, ... } ? use "ALL" in a category to allow that whole category (pets still gated by TradePetType for bare names)
+    TradePetType = {"ALL"},       -- Only applies to pets: "ALL", "Mega", "Neon", "Regular", "Neon_FG", "Regular_FG" ? not used for food/toys/etc.; inline prefixes on pet strings (e.g. "Mega Dog") bypass this
 
-    table.clear(eggNames)
-    table.clear(eggObjects)
-    
-    if eggsFolder then
-        local success, children = pcall(function() return eggsFolder:GetChildren() end)
-        if success and children then
-            for _, item in ipairs(children) do
-                if item:IsA("Folder") or item:IsA("Model") then
-                    local name = item.Name
-                    if name ~= "30M Visits" then
-                        local priceText = ""
-                        for _, desc in ipairs(item:GetDescendants()) do
-                            if desc:IsA("TextLabel") and (desc.Text:match("%d") or desc.Text:match("K") or desc.Text:match("M") or desc.Text:match("B") or desc.Text:match("QD")) then
-                                if not desc.Text:match("%%") and #desc.Text < 15 then
-                                    priceText = desc.Text
-                                    break
-                                end
-                            end
-                        end
-                        
-                        if priceText == "" and cachedEggPrices[name] then
-                            priceText = cachedEggPrices[name]
-                        end
-                        
-                        local displayName = priceText ~= "" and (name .. " (Harga: " .. priceText .. ")") or name
-                        table.insert(eggNames, displayName)
-                        eggObjects[displayName] = item
-                    end
-                end
-            end
-        end
-    end
-    
-    table.sort(eggNames)
-    if #eggNames == 0 then table.insert(eggNames, "None Found") end
-    getgenv().SelectedEgg = eggNames[1]
-end
+    -- === CASH TRANSFER ===
+    CashTransfer = false,
+    TransferMethods = {"mannequin"},  -- Current Methods: "mannequin"
+    TransferAccount = "",  -- Receiver username. Same config on both accounts: that account lists a mannequin, the others send. Same server.
 
-ScanEggs()
+    -- === DISCORD WEBHOOK ===
+    WebhookEnabled = false,
+    WebhookURL = "",
+    WebhookPets = {},  -- Pet names to send (empty = all)
 
--- 3. Sistem Auto Hatch Telur
-local lastTeleportedEgg = nil
-task.spawn(function()
-    while true do
-        if getgenv().AutoFarmEgg and getgenv().SelectedEgg then
-            pcall(function()
-                local targetEggFolder = eggObjects[getgenv().SelectedEgg]
-                if targetEggFolder then
-                    if lastTeleportedEgg ~= getgenv().SelectedEgg then
-                        local tpPart = targetEggFolder:FindFirstChild("2") 
-                            or targetEggFolder:FindFirstChild("1") 
-                            or targetEggFolder:FindFirstChild("PriceTag") 
-                            or targetEggFolder:FindFirstChild("Egg")
-                        
-                        local character = LocalPlayer.Character
-                        if tpPart and tpPart:IsA("BasePart") and character and character:FindFirstChild("HumanoidRootPart") then
-                            character.HumanoidRootPart.CFrame = tpPart.CFrame + Vector3.new(0, 3, 0)
-                            lastTeleportedEgg = getgenv().SelectedEgg
-                            task.wait(0.5)
-                        end
-                    end
+    -- === ACCOUNT FEATURES (stop when Conditions met; FarmSync / FarmersV5 only) ===
+    AccountFeatures = {
+        Enabled = false,
+        RequireAll = true, -- true = AND all conditions; false = OR any one
+        Conditions = {
+            -- { Type = "PetCount", PetName = "Mega Neon Dog", MinCount = 16 },
+            -- { Type = "Currency", Currency = "money", MinAmount = 100000 },
+            -- { Type = "SessionMinutes", MinMinutes = 180 },
+        },
+        ["Selected Tool"] = "FarmSync", -- or "FarmersV5"
+        FarmSync = {
+            DisableAccount = false,
+            AutoChange = false,
+            StartFolderId = "",
+            EndFolderId = "",
+            ConfigId = "",
+        },
+        FarmersV5 = {
+            DisableAccount = false,
+            APIKey = "",
+            AutoSwap = false,
+            AutoSwapOption = 1,
+            AutoSwapCooldown = 100,
+        },
+    },
 
-                    for _, desc in ipairs(targetEggFolder:GetDescendants()) do
-                        if desc:IsA("ProximityPrompt") then
-                            if fireproximityprompt then fireproximityprompt(desc) end
-                        end
-                    end
-
-                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-                    task.wait(0.05)
-                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-                end
-            end)
-        else
-            lastTeleportedEgg = nil
-        end
-        task.wait(0.2)
-    end
-end)
-
--- 4. Sistem Auto Farm Breakable (Mencakup workspace.ClickerChest & workspace.Breakables)
-task.spawn(function()
-    while true do
-        if getgenv().AutoBreakableActive then
-            pcall(function()
-                local breakableService = ReplicatedStorage:FindFirstChild("RemoteServices") 
-                    and ReplicatedStorage.RemoteServices:FindFirstChild("BreakableService")
-                local reFolder = breakableService and (breakableService:FindFirstChild("RE") or breakableService:FindFirstChild("RemoteEvents") or breakableService)
-                
-                local targets = {}
-                local clickerChest = Workspace:FindFirstChild("ClickerChest")
-                if clickerChest then
-                    table.insert(targets, clickerChest)
-                end
-                
-                local breakablesFolder = Workspace:FindFirstChild("Breakables")
-                if breakablesFolder then
-                    for _, item in ipairs(breakablesFolder:GetChildren()) do
-                        if item:IsA("Model") or item:IsA("Folder") then
-                            table.insert(targets, item)
-                        end
-                    end
-                end
-                
-                for _, item in ipairs(targets) do
-                    if not getgenv().AutoBreakableActive then break end
-                    
-                    local character = LocalPlayer.Character
-                    local primaryPart = item.PrimaryPart or item:FindFirstChild("Hitbox") or item:FindFirstChildWhichIsA("BasePart")
-                    
-                    if primaryPart and character and character:FindFirstChild("HumanoidRootPart") then
-                        character.HumanoidRootPart.CFrame = primaryPart.CFrame + Vector3.new(0, 3, 0)
-                    end
-
-                    if reFolder then
-                        for _, remote in ipairs(reFolder:GetChildren()) do
-                            if remote:IsA("RemoteEvent") then
-                                remote:FireServer(item)
-                                remote:FireServer({ Target = item })
-                                remote:FireServer(item.Name)
-                                remote:FireServer({ Breakable = item })
-                            end
-                        end
-                    end
-
-                    for _, desc in ipairs(item:GetDescendants()) do
-                        if desc:IsA("ProximityPrompt") then
-                            if fireproximityprompt then fireproximityprompt(desc) end
-                        end
-                    end
-                    
-                    task.wait(BreakableDelay)
-                end
-            end)
-        end
-        task.wait(0.5)
-    end
-end)
-
--- 5. Fungsi & Sistem Auto Claim Pet Index Reward
-local function ClaimPetIndexRewards()
-    pcall(function()
-        local petIndexService = ReplicatedStorage:FindFirstChild("RemoteServices") 
-            and ReplicatedStorage.RemoteServices:FindFirstChild("PetIndexService")
-        local reFolder = petIndexService and petIndexService:FindFirstChild("RE")
-        
-        if reFolder then
-            local claimAll = reFolder:FindFirstChild("ClaimAllRequested")
-            if claimAll then
-                claimAll:FireServer()
-            end
-        end
-    end)
-end
-
-task.spawn(function()
-    while true do
-        if getgenv().AutoClaimPetIndexActive then
-            ClaimPetIndexRewards()
-        end
-        task.wait(3)
-    end
-end)
-
--- 6. Fungsi & Sistem Auto Equip Best Pets (PetService)
-local function EquipBestPets()
-    pcall(function()
-        local petService = ReplicatedStorage:FindFirstChild("RemoteServices") 
-            and ReplicatedStorage.RemoteServices:FindFirstChild("PetService")
-        local reFolder = petService and petService:FindFirstChild("RE")
-        
-        if reFolder then
-            local petAction = reFolder:FindFirstChild("PetActionRequested")
-            if petAction then
-                petAction:FireServer("EquipBest")
-                petAction:FireServer({ Action = "EquipBest" })
-                petAction:FireServer("Equip Best")
-            end
-        end
-    end)
-end
-
-task.spawn(function()
-    while true do
-        if getgenv().AutoEquipBestActive then
-            EquipBestPets()
-        end
-        task.wait(5)
-    end
-end)
-
--- 7. Fungsi & Sistem Auto Claim Quest (QuestService.RF)
-local function ClaimAllQuests()
-    pcall(function()
-        local questService = ReplicatedStorage:FindFirstChild("RemoteServices") 
-            and ReplicatedStorage.RemoteServices:FindFirstChild("QuestService")
-        local rfFolder = questService and questService:FindFirstChild("RF")
-        
-        if rfFolder then
-            for _, rf in ipairs(rfFolder:GetChildren()) do
-                if rf:IsA("RemoteFunction") then
-                    -- Jalankan di thread terpisah agar InvokeServer tidak menahan loop jika server lambat merespons
-                    task.spawn(function()
-                        pcall(function() rf:InvokeServer() end)
-                        for i = 1, 10 do
-                            pcall(function() rf:InvokeServer(i) end)
-                            pcall(function() rf:InvokeServer({ Index = i }) end)
-                            pcall(function() rf:InvokeServer({ QuestId = i }) end)
-                        end
-                    end)
-                end
-            end
-        end
-    end)
-end
-
-task.spawn(function()
-    while true do
-        if getgenv().AutoClaimQuestActive then
-            ClaimAllQuests()
-        end
-        task.wait(5) -- Pengecekan klaim quest setiap 5 detik
-    end
-end)
-
--- 8. Sistem Auto Rebirth
-task.spawn(function()
-    while true do
-        if getgenv().AutoRebirthActive then
-            pcall(function()
-                local reFolder = ReplicatedStorage:FindFirstChild("RemoteServices") 
-                    and ReplicatedStorage.RemoteServices:FindFirstChild("RebirthService") 
-                    and ReplicatedStorage.RemoteServices.RebirthService:FindFirstChild("RE")
-                
-                if reFolder then
-                    local rebirthReq = reFolder:FindFirstChild("RebirthRequested")
-                    if rebirthReq then
-                        rebirthReq:FireServer({ Index = selectedRebirthIndex })
-                    end
-                    
-                    local autoSlot = reFolder:FindFirstChild("AutoSlotChanged")
-                    if autoSlot then
-                        autoSlot:FireServer(selectedRebirthIndex, true)
-                    end
-                end
-            end)
-        end
-        task.wait(0.5)
-    end
-end)
-
--- 9. Sistem Anti-AFK
-local vu = game:GetService("VirtualUser")
-LocalPlayer.Idled:Connect(function()
-    if getgenv().AntiAfkActive then
-        vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-        task.wait(1)
-        vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-    end
-end)
-
--- UI COMPONENTS (Rayfield Style)
-FarmTab:CreateToggle({
-   Name = "Auto Click",
-   CurrentValue = false,
-   Flag = "AutoClickToggleClick",
-   Callback = function(Value)
-      getgenv().AutoClicking = Value
-   end,
-})
-
-FarmTab:CreateSlider({
-   Name = "Click Delay (Seconds)",
-   Range = {0.01, 1},
-   Increment = 0.01,
-   Suffix = "s",
-   CurrentValue = 0.1,
-   Flag = "ClickDelaySlider",
-   Callback = function(Value)
-      ClickDelay = Value
-   end,
-})
-
-FarmTab:CreateToggle({
-   Name = "Auto Farm Breakable",
-   CurrentValue = false,
-   Flag = "AutoBreakableToggle",
-   Callback = function(Value)
-      getgenv().AutoBreakableActive = Value
-   end,
-})
-
-FarmTab:CreateToggle({
-   Name = "Auto Claim Pet Index Rewards",
-   CurrentValue = false,
-   Flag = "AutoClaimPetIndexToggle",
-   Callback = function(Value)
-      getgenv().AutoClaimPetIndexActive = Value
-   end,
-})
-
-FarmTab:CreateButton({
-   Name = "Claim All Pet Index Now",
-   Callback = function()
-      ClaimPetIndexRewards()
-      Rayfield:Notify({
-         Title = "Pet Index",
-         Content = "Permintaan Claim All Pet Index dikirim!",
-         Duration = 2,
-      })
-   end,
-})
-
-FarmTab:CreateToggle({
-   Name = "Auto Equip Best Pets",
-   CurrentValue = false,
-   Flag = "AutoEquipBestToggle",
-   Callback = function(Value)
-      getgenv().AutoEquipBestActive = Value
-      if Value then
-          EquipBestPets()
-      end
-   end,
-})
-
-FarmTab:CreateButton({
-   Name = "Equip Best Pets Now",
-   Callback = function()
-      EquipBestPets()
-      Rayfield:Notify({
-         Title = "Pet System",
-         Content = "Berhasil meng-equip pet terkuat!",
-         Duration = 2,
-      })
-   end,
-})
-
--- Komponen Auto Claim Quest di dalam menu Auto Farm
-FarmTab:CreateToggle({
-   Name = "Auto Claim Quests",
-   CurrentValue = false,
-   Flag = "AutoClaimQuestToggle",
-   Callback = function(Value)
-      getgenv().AutoClaimQuestActive = Value
-      if Value then
-          ClaimAllQuests()
-      end
-   end,
-})
-
-FarmTab:CreateButton({
-   Name = "Claim All Quests Now",
-   Callback = function()
-      ClaimAllQuests()
-      Rayfield:Notify({
-         Title = "Quest System",
-         Content = "Permintaan klaim quest dikirim!",
-         Duration = 2,
-      })
-   end,
-})
-
-local EggDropdown = FarmTab2:CreateDropdown({
-   Name = "Pilih Telur",
-   Options = eggNames,
-   CurrentOption = {eggNames[1] or "None Found"},
-   MultipleOptions = false,
-   Flag = "EggDropdown",
-   Callback = function(Options)
-      getgenv().SelectedEgg = type(Options) == "table" and Options[1] or Options
-      lastTeleportedEgg = nil
-   end,
-})
-
-FarmTab2:CreateToggle({
-   Name = "Auto Hatch",
-   CurrentValue = false,
-   Flag = "AutoFarmToggle",
-   Callback = function(Value)
-      getgenv().AutoFarmEgg = Value
-      lastTeleportedEgg = nil
-   end,
-})
-
-FarmTab2:CreateButton({
-   Name = "Refresh Daftar Telur",
-   Callback = function()
-      ScanEggs()
-      EggDropdown:Refresh(eggNames)
-   end,
-})
-
--- TAB REBIRTH COMPONENTS
-RebirthTab:CreateDropdown({
-   Name = "Pilih Tier Rebirth",
-   Options = {
-       "Tier 1 (+1) - 713.25T", "Tier 2 (+5) - 3.57QD", "Tier 3 (+25) - 17.83QD", 
-       "Tier 4 (+125) - 89.16QD", "Tier 5 (+600) - 427.95QD", "Tier 6 (+3K) - 2.14QN", 
-       "Tier 7 (+15K) - 10.70QN", "Tier 8 (+75K) - 53.49QN", "Tier 9 (+400K) - 285.30QN", 
-       "Tier 10 (+2M) - 1.43SX", "Tier 11 (+10M) - 7.13SX", "Tier 12 (+50M) - 35.66SX", 
-       "Tier 13 (+250M) - 178.31SX", "Tier 14 (+1.20B) - 855.90SX", "Tier 15 (+6B) - 4.28SP", 
-       "Tier 16 (+30B) - 21.41SP", "Tier 17 (+150B) - 107.03SP", "Tier 18 (+750B) - 535.13SP"
-   },
-   CurrentOption = {"Tier 1 (+1) - 713.25T"},
-   MultipleOptions = false,
-   Flag = "RebirthTierDropdown",
-   Callback = function(Options)
-      local val = type(Options) == "table" and Options[1] or Options
-      for i = 1, 18 do
-          if string.find(val, "Tier " .. i .. " ") then
-              selectedRebirthIndex = i
-              break
-          end
-      end
-   end,
-})
-
-RebirthTab:CreateToggle({
-   Name = "Auto Rebirth",
-   CurrentValue = false,
-   Flag = "AutoRebirthToggle",
-   Callback = function(Value)
-      getgenv().AutoRebirthActive = Value
-   end,
-})
-
--- TAB SETTINGS COMPONENTS
-SettingsTab:CreateToggle({
-   Name = "Anti-AFK (Anti Kick)",
-   CurrentValue = false,
-   Flag = "AntiAfkToggle",
-   Callback = function(Value)
-      getgenv().AntiAfkActive = Value
-   end,
-})
-
-SettingsTab:CreateButton({
-   Name = "Toggle UI (Buka/Tutup)",
-   Callback = function()
-      Rayfield:ToggleUI()
-   end,
-})
-
-Rayfield:Notify({
-   Title = "Xdaniky HUB Loaded",
-   Content = "Auto Claim Quest & Semua Fitur Siap!",
-   Duration = 3,
-})
+    ExtraOpti = false
+}
+loadstring(game:HttpGet("https://raw.githubusercontent.com/voltrex2/VoHub/refs/heads/main/FARM"))()
