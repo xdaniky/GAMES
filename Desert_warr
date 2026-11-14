@@ -1,5 +1,5 @@
 -- ==========================================
--- XDANIKY HUB : DELTA MOBILE OPTIMIZED V2
+-- XDANIKY HUB : DELTA MOBILE FIXED V3
 -- ==========================================
 
 if not game:IsLoaded() then
@@ -17,14 +17,14 @@ local gameName = success and gameInfo.Name or "Desert War"
 local Window = Rayfield:CreateWindow({
     Name = "Xdaniky Hub | " .. gameName,
     LoadingTitle = "Memuat Xdaniky Hub...",
-    LoadingSubtitle = "Delta Mobile Optimized",
+    LoadingSubtitle = "Delta Mobile Fixed",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
 
 local Config = {
     Chams = false,
-    UI_ESP = false,      -- ESP Nama & Jarak via Menu UI
+    UI_ESP = false,
     Crosshair = false,
     CrosshairColor = Color3.fromRGB(255, 255, 255),
     CrosshairSize = 6,
@@ -62,7 +62,6 @@ VisualTab:CreateToggle({
     Callback = function(v) Config.UI_ESP = v end,
 })
 
--- Label Paragraph di Menu untuk Menampilkan Info Musuh di HP
 local ESPParagraph = VisualTab:CreateParagraph({Title = "Daftar Musuh Terdekat", Content = "Aktifkan Info Musuh untuk melihat data."})
 
 VisualTab:CreateColorPicker({
@@ -209,7 +208,6 @@ CrossV.AnchorPoint = Vector2.new(0.5, 0.5)
 CrossV.Visible = false
 CrossV.Parent = ScreenGui
 
--- Fungsi Setup Chams Player
 local function setupChams(player, char)
     if player == LocalPlayer then return end
     local hl = char:FindFirstChild("DW_Highlight")
@@ -239,13 +237,14 @@ for _, p in ipairs(Players:GetPlayers()) do
     onPlayerAdded(p)
 end
 
--- Loop Utama RenderStepped
 RunService.RenderStepped:Connect(function()
-    local mousePos = UserInputService:GetMouseLocation()
+    -- Mengambil titik pusat layar secara mutlak agar tidak tergeser sentuhan jari bebas
+    local vpSize = Camera.ViewportSize
+    local centerScreen = Vector2.new(vpSize.X / 2, vpSize.Y / 2)
     
     if Config.Aimbot and Config.FOV then
         FOVFrame.Visible = true
-        FOVFrame.Position = UDim2.new(0, mousePos.X, 0, mousePos.Y)
+        FOVFrame.Position = UDim2.new(0, centerScreen.X, 0, centerScreen.Y)
         local size = Config.FOVSize * 2
         FOVFrame.Size = UDim2.new(0, size, 0, size)
     else
@@ -253,8 +252,7 @@ RunService.RenderStepped:Connect(function()
     end
 
     if Config.Crosshair then
-        local vpSize = Camera.ViewportSize
-        local cx, cy = vpSize.X / 2, vpSize.Y / 2
+        local cx, cy = centerScreen.X, centerScreen.Y
         local s = Config.CrosshairSize
 
         CrossH.Visible = true
@@ -274,7 +272,6 @@ RunService.RenderStepped:Connect(function()
     local localChar = LocalPlayer.Character
     local localHRP = localChar and localChar:FindFirstChild("HumanoidRootPart")
 
-    -- Update Chams & Live UI ESP Info
     local espText = ""
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
@@ -300,7 +297,7 @@ RunService.RenderStepped:Connect(function()
                     local dist = math.floor((char.HumanoidRootPart.Position - localHRP.Position).Magnitude)
                     local hum = char:FindFirstChildOfClass("Humanoid")
                     local hp = hum and math.floor(hum.Health) or 0
-                    espText = espText .. "• " .. player.Name .. " | Jarak: " + dist + "m | HP: " + hp + "\n"
+                    espText = espText .. "• " .. player.Name .. " | Jarak: " .. tostring(dist) .. "m | HP: " .. tostring(hp) .. "\n"
                 end
             end
         end
@@ -316,7 +313,7 @@ RunService.RenderStepped:Connect(function()
         ESPParagraph:Set("Aktifkan Info Musuh untuk melihat data.")
     end
 
-    -- Aimbot Logic (Smooth Lock tanpa merusak sentuhan kamera bebas)
+    -- Aimbot Terkunci Stabil di Tengah Tanpa Mengganggu Sentuhan Layar Bebas
     if Config.Aimbot then
         local closestTarget = nil
         local shortestDist = Config.FOVSize
@@ -331,7 +328,7 @@ RunService.RenderStepped:Connect(function()
                     if hum and hum.Health > 0 and isVisible(targetPart, char) then
                         local screenPoint, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
                         if onScreen then
-                            local screenDist = (Vector2.new(screenPoint.X, screenPoint.Y) - mousePos).Magnitude
+                            local screenDist = (Vector2.new(screenPoint.X, screenPoint.Y) - centerScreen).Magnitude
                             if screenDist < shortestDist then
                                 shortestDist = screenDist
                                 closestTarget = targetPart
@@ -343,9 +340,7 @@ RunService.RenderStepped:Connect(function()
         end
 
         if closestTarget then
-            -- Menggunakan CFrame smooth agar tidak "menarik" layar secara kasar saat disentuh
-            local targetCFrame = CFrame.new(Camera.CFrame.Position, closestTarget.Position)
-            Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 0.2)
+            Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, closestTarget.Position), 0.3)
         end
     end
 end)
@@ -376,4 +371,4 @@ script.Destroying:Connect(function()
 end)
 
 Rayfield:LoadConfiguration()
-print("Xdaniky Hub Mobile Optimized V2 Loaded Successfully!")
+print("Xdaniky Hub Mobile Fixed V3 Loaded Successfully!")
