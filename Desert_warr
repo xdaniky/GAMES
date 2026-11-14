@@ -1,5 +1,5 @@
 -- ==========================================
--- XDANIKY HUB : MOBILE & DELTA OPTIMIZED
+-- XDANIKY HUB : DELTA MOBILE OPTIMIZED V2
 -- ==========================================
 
 if not game:IsLoaded() then
@@ -17,14 +17,14 @@ local gameName = success and gameInfo.Name or "Desert War"
 local Window = Rayfield:CreateWindow({
     Name = "Xdaniky Hub | " .. gameName,
     LoadingTitle = "Memuat Xdaniky Hub...",
-    LoadingSubtitle = "Delta Executor Compatible",
+    LoadingSubtitle = "Delta Mobile Optimized",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
 
 local Config = {
     Chams = false,
-    BillboardESP = false,
+    UI_ESP = false,      -- ESP Nama & Jarak via Menu UI
     Crosshair = false,
     CrosshairColor = Color3.fromRGB(255, 255, 255),
     CrosshairSize = 6,
@@ -57,10 +57,13 @@ VisualTab:CreateToggle({
 })
 
 VisualTab:CreateToggle({
-    Name = "Show Name + Distance (Mobile ESP)",
+    Name = "Info Musuh (Name + Dist di Menu)",
     CurrentValue = false,
-    Callback = function(v) Config.BillboardESP = v end,
+    Callback = function(v) Config.UI_ESP = v end,
 })
+
+-- Label Paragraph di Menu untuk Menampilkan Info Musuh di HP
+local ESPParagraph = VisualTab:CreateParagraph({Title = "Daftar Musuh Terdekat", Content = "Aktifkan Info Musuh untuk melihat data."})
 
 VisualTab:CreateColorPicker({
     Name = "Warna Tim Sendiri",
@@ -172,6 +175,7 @@ local function isVisible(targetPart, char)
     return false
 end
 
+-- Setup ScreenGui Mobile (FOV & Crosshair)
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "XdanikyMobileUI"
 ScreenGui.Parent = game:GetService("CoreGui")
@@ -205,11 +209,9 @@ CrossV.AnchorPoint = Vector2.new(0.5, 0.5)
 CrossV.Visible = false
 CrossV.Parent = ScreenGui
 
-local function setupBillboardESP(player, char)
+-- Fungsi Setup Chams Player
+local function setupChams(player, char)
     if player == LocalPlayer then return end
-    local head = char:WaitForChild("Head", 5)
-    if not head then return end
-
     local hl = char:FindFirstChild("DW_Highlight")
     if not hl then
         hl = Instance.new("Highlight")
@@ -218,39 +220,16 @@ local function setupBillboardESP(player, char)
         hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
         hl.Parent = char
     end
-
-    local bg = char:FindFirstChild("DW_MobileESP")
-    if not bg then
-        bg = Instance.new("BillboardGui")
-        bg.Name = "DW_MobileESP"
-        bg.Size = UDim2.new(0, 200, 0, 50)
-        bg.StudsOffset = Vector3.new(0, 3, 0)
-        bg.AlwaysOnBack = true
-        bg.Adornee = head
-        
-        local txt = Instance.new("TextLabel")
-        txt.Name = "Label"
-        txt.Size = UDim2.new(1, 0, 1, 0)
-        txt.BackgroundTransparency = 1
-        txt.TextColor3 = Color3.fromRGB(255, 255, 255)
-        txt.TextScaled = true
-        txt.Font = Enum.Font.SourceSansBold
-        txt.TextStrokeTransparency = 0
-        txt.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-        txt.Parent = bg
-        
-        bg.Parent = char
-    end
 end
 
 local function onPlayerAdded(player)
     player.CharacterAdded:Connect(function(char)
         task.wait(0.5)
-        setupBillboardESP(player, char)
+        setupChams(player, char)
     end)
     if player.Character then
         task.spawn(function()
-            setupBillboardESP(player, player.Character)
+            setupChams(player, player.Character)
         end)
     end
 end
@@ -260,6 +239,7 @@ for _, p in ipairs(Players:GetPlayers()) do
     onPlayerAdded(p)
 end
 
+-- Loop Utama RenderStepped
 RunService.RenderStepped:Connect(function()
     local mousePos = UserInputService:GetMouseLocation()
     
@@ -294,13 +274,13 @@ RunService.RenderStepped:Connect(function()
     local localChar = LocalPlayer.Character
     local localHRP = localChar and localChar:FindFirstChild("HumanoidRootPart")
 
+    -- Update Chams & Live UI ESP Info
+    local espText = ""
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
             local char = player.Character
             if char then
                 local hl = char:FindFirstChild("DW_Highlight")
-                local bg = char:FindFirstChild("DW_MobileESP")
-
                 if hl then
                     if Config.Chams then
                         if isRealEnemy(player) then
@@ -316,23 +296,27 @@ RunService.RenderStepped:Connect(function()
                     end
                 end
 
-                if bg and bg:FindFirstChild("Label") then
-                    if Config.BillboardESP and isRealEnemy(player) then
-                        if localHRP and char:FindFirstChild("HumanoidRootPart") then
-                            local dist = math.floor((char.HumanoidRootPart.Position - localHRP.Position).Magnitude)
-                            bg.Label.Text = player.Name .. " [" .. dist .. "m]"
-                        else
-                            bg.Label.Text = player.Name
-                        end
-                        bg.Enabled = true
-                    else
-                        bg.Enabled = false
-                    end
+                if Config.UI_ESP and isRealEnemy(player) and localHRP and char:FindFirstChild("HumanoidRootPart") then
+                    local dist = math.floor((char.HumanoidRootPart.Position - localHRP.Position).Magnitude)
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    local hp = hum and math.floor(hum.Health) or 0
+                    espText = espText .. "• " .. player.Name .. " | Jarak: " + dist + "m | HP: " + hp + "\n"
                 end
             end
         end
     end
 
+    if Config.UI_ESP then
+        if espText == "" then
+            ESPParagraph:Set("Tidak ada musuh terdekat.")
+        else
+            ESPParagraph:Set(espText)
+        end
+    else
+        ESPParagraph:Set("Aktifkan Info Musuh untuk melihat data.")
+    end
+
+    -- Aimbot Logic (Smooth Lock tanpa merusak sentuhan kamera bebas)
     if Config.Aimbot then
         local closestTarget = nil
         local shortestDist = Config.FOVSize
@@ -359,7 +343,9 @@ RunService.RenderStepped:Connect(function()
         end
 
         if closestTarget then
-            Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, closestTarget.Position), 0.3)
+            -- Menggunakan CFrame smooth agar tidak "menarik" layar secara kasar saat disentuh
+            local targetCFrame = CFrame.new(Camera.CFrame.Position, closestTarget.Position)
+            Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 0.2)
         end
     end
 end)
@@ -390,4 +376,4 @@ script.Destroying:Connect(function()
 end)
 
 Rayfield:LoadConfiguration()
-print("Xdaniky Hub Mobile Optimized Loaded Successfully!")
+print("Xdaniky Hub Mobile Optimized V2 Loaded Successfully!")
