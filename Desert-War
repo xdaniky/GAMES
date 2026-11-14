@@ -8,22 +8,20 @@ end
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Mendeteksi nama game secara otomatis
 local MarketplaceService = game:GetService("MarketplaceService")
 local success, gameInfo = pcall(function()
     return MarketplaceService:GetProductInfo(game.PlaceId)
 end)
-local gameName = success and gameInfo.Name or "Roblox Game"
+local gameName = success and gameInfo.Name or "Desert War"
 
 local Window = Rayfield:CreateWindow({
-    Name = "Xdaniky Hub | " + gameName,
-    LoadingTitle = "Memuat Xdaniky Hub (Mobile)...",
+    Name = "Xdaniky Hub | " .. gameName,
+    LoadingTitle = "Memuat Xdaniky Hub...",
     LoadingSubtitle = "Delta Executor Compatible",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
 
--- Konfigurasi Pengaturan
 local Config = {
     Chams = false,
     BillboardESP = false,
@@ -46,14 +44,10 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
 
--- Tab Menu
 local VisualTab = Window:CreateTab("Visuals", 4483362458)
 local CrosshairTab = Window:CreateTab("Crosshair", 4483362458)
 local CombatTab = Window:CreateTab("Combat", 4483362458)
 
--- ==========================================
--- 1. VISUALS TAB (Chams & Mobile Billboard ESP)
--- ==========================================
 VisualTab:CreateSection("Player Visuals & ESP")
 
 VisualTab:CreateToggle({
@@ -80,9 +74,6 @@ VisualTab:CreateColorPicker({
     Callback = function(v) Config.EnemyColor = v end
 })
 
--- ==========================================
--- 2. CROSSHAIR TAB (Menu Khusus Crosshair)
--- ==========================================
 CrosshairTab:CreateSection("Custom Crosshair Settings")
 
 CrosshairTab:CreateToggle({
@@ -105,9 +96,6 @@ CrosshairTab:CreateSlider({
     Callback = function(v) Config.CrosshairSize = v end,
 })
 
--- ==========================================
--- 3. COMBAT TAB (No Recoil & Aimbot)
--- ==========================================
 CombatTab:CreateSection("Weapon Modifications")
 
 CombatTab:CreateToggle({
@@ -150,7 +138,6 @@ CombatTab:CreateSlider({
     Callback = function(v) Config.FOVSize = v end,
 })
 
--- Fungsi Deteksi Musuh Universal
 local function isRealEnemy(player)
     if player == LocalPlayer then return false end
     if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return false end
@@ -161,7 +148,6 @@ local function isRealEnemy(player)
     return true
 end
 
--- Fungsi Cek Tembok (Wall Check) yang Aman untuk Mobile
 local function isVisible(targetPart, char)
     if not Config.WallCheck then return true end
     
@@ -186,13 +172,11 @@ local function isVisible(targetPart, char)
     return false
 end
 
--- Setup FOV Circle & Crosshair menggunakan ScreenGui agar 100% Support Delta
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "XdanikyMobileUI"
 ScreenGui.Parent = game:GetService("CoreGui")
 ScreenGui.IgnoreGuiInset = true
 
--- FOV Circle Frame (Alternatif Drawing Circle di Mobile)
 local FOVFrame = Instance.new("Frame")
 FOVFrame.Name = "FOVCircle"
 FOVFrame.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -209,7 +193,6 @@ UIStroke.Color = Color3.fromRGB(255, 255, 255)
 UIStroke.Thickness = 2
 UIStroke.Parent = FOVFrame
 
--- Crosshair GUI Mobile
 local CrossH = Instance.new("Frame")
 CrossH.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 CrossH.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -222,13 +205,11 @@ CrossV.AnchorPoint = Vector2.new(0.5, 0.5)
 CrossV.Visible = false
 CrossV.Parent = ScreenGui
 
--- Fungsi Setup Billboard ESP Khusus Karakter Mobile
 local function setupBillboardESP(player, char)
     if player == LocalPlayer then return end
     local head = char:WaitForChild("Head", 5)
     if not head then return end
 
-    -- 1. Chams
     local hl = char:FindFirstChild("DW_Highlight")
     if not hl then
         hl = Instance.new("Highlight")
@@ -238,7 +219,6 @@ local function setupBillboardESP(player, char)
         hl.Parent = char
     end
 
-    -- 2. Mobile Name + Distance BillboardGui
     local bg = char:FindFirstChild("DW_MobileESP")
     if not bg then
         bg = Instance.new("BillboardGui")
@@ -280,11 +260,9 @@ for _, p in ipairs(Players:GetPlayers()) do
     onPlayerAdded(p)
 end
 
--- Loop Utama RenderStepped
 RunService.RenderStepped:Connect(function()
     local mousePos = UserInputService:GetMouseLocation()
     
-    -- Update FOV Frame
     if Config.Aimbot and Config.FOV then
         FOVFrame.Visible = true
         FOVFrame.Position = UDim2.new(0, mousePos.X, 0, mousePos.Y)
@@ -294,7 +272,6 @@ RunService.RenderStepped:Connect(function()
         FOVFrame.Visible = false
     end
 
-    -- Update Custom Crosshair Mobile
     if Config.Crosshair then
         local vpSize = Camera.ViewportSize
         local cx, cy = vpSize.X / 2, vpSize.Y / 2
@@ -317,7 +294,6 @@ RunService.RenderStepped:Connect(function()
     local localChar = LocalPlayer.Character
     local localHRP = localChar and localChar:FindFirstChild("HumanoidRootPart")
 
-    -- Update Player Visuals (Chams & ESP)
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
             local char = player.Character
@@ -325,7 +301,6 @@ RunService.RenderStepped:Connect(function()
                 local hl = char:FindFirstChild("DW_Highlight")
                 local bg = char:FindFirstChild("DW_MobileESP")
 
-                -- Chams Update
                 if hl then
                     if Config.Chams then
                         if isRealEnemy(player) then
@@ -341,7 +316,6 @@ RunService.RenderStepped:Connect(function()
                     end
                 end
 
-                -- ESP Billboard Update
                 if bg and bg:FindFirstChild("Label") then
                     if Config.BillboardESP and isRealEnemy(player) then
                         if localHRP and char:FindFirstChild("HumanoidRootPart") then
@@ -359,7 +333,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Aimbot Logic Mobile
     if Config.Aimbot then
         local closestTarget = nil
         local shortestDist = Config.FOVSize
@@ -391,7 +364,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Modul No Recoil ACS Engine
 task.spawn(function()
     while task.wait(0.5) do
         if Config.NoRecoil then
