@@ -1,5 +1,5 @@
 -- ==========================================
--- XDANIKY HUB : ULTIMATE DESERT WAR SCRIPT
+-- XDANIKY HUB : MOBILE & DELTA OPTIMIZED
 -- ==========================================
 
 if not game:IsLoaded() then
@@ -16,9 +16,9 @@ end)
 local gameName = success and gameInfo.Name or "Roblox Game"
 
 local Window = Rayfield:CreateWindow({
-    Name = "Xdaniky Hub | " .. gameName,
-    LoadingTitle = "Memuat Xdaniky Hub...",
-    LoadingSubtitle = "Universal Script Engine",
+    Name = "Xdaniky Hub | " + gameName,
+    LoadingTitle = "Memuat Xdaniky Hub (Mobile)...",
+    LoadingSubtitle = "Delta Executor Compatible",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
@@ -26,14 +26,14 @@ local Window = Rayfield:CreateWindow({
 -- Konfigurasi Pengaturan
 local Config = {
     Chams = false,
-    DrawingESP = false,
+    BillboardESP = false,
     Crosshair = false,
     CrosshairColor = Color3.fromRGB(255, 255, 255),
     CrosshairSize = 6,
     NoRecoil = false,
     Aimbot = false,
-    AimHead = true,   -- True = Target ke Kepala, False = Target ke Badan
-    WallCheck = true, -- True = Hanya musuh terbuka (tidak tembus tembok)
+    AimHead = true,
+    WallCheck = true,
     FOV = true,
     FOVSize = 150,
     TeamColor = Color3.fromRGB(0, 255, 0),
@@ -52,7 +52,7 @@ local CrosshairTab = Window:CreateTab("Crosshair", 4483362458)
 local CombatTab = Window:CreateTab("Combat", 4483362458)
 
 -- ==========================================
--- 1. VISUALS TAB (Chams & Drawing ESP)
+-- 1. VISUALS TAB (Chams & Mobile Billboard ESP)
 -- ==========================================
 VisualTab:CreateSection("Player Visuals & ESP")
 
@@ -63,9 +63,9 @@ VisualTab:CreateToggle({
 })
 
 VisualTab:CreateToggle({
-    Name = "Show Name + Distance (Drawing ESP)",
+    Name = "Show Name + Distance (Mobile ESP)",
     CurrentValue = false,
-    Callback = function(v) Config.DrawingESP = v end,
+    Callback = function(v) Config.BillboardESP = v end,
 })
 
 VisualTab:CreateColorPicker({
@@ -106,7 +106,7 @@ CrosshairTab:CreateSlider({
 })
 
 -- ==========================================
--- 3. COMBAT TAB (No Recoil, Aimbot, Target & WallCheck)
+-- 3. COMBAT TAB (No Recoil & Aimbot)
 -- ==========================================
 CombatTab:CreateSection("Weapon Modifications")
 
@@ -161,7 +161,7 @@ local function isRealEnemy(player)
     return true
 end
 
--- Fungsi Cek Apakah Target Terhalang Tembok (Wall Check)
+-- Fungsi Cek Tembok (Wall Check) yang Aman untuk Mobile
 local function isVisible(targetPart, char)
     if not Config.WallCheck then return true end
     
@@ -186,60 +186,129 @@ local function isVisible(targetPart, char)
     return false
 end
 
--- Setup Lingkaran FOV & Crosshair Drawing
-local FOVCircle = Drawing.new("Circle")
-FOVCircle.Visible = false
-FOVCircle.Thickness = 2
-FOVCircle.NumSides = 64
-FOVCircle.Filled = false
-FOVCircle.Transparency = 0.7
-FOVCircle.Color = Color3.fromRGB(255, 255, 255)
+-- Setup FOV Circle & Crosshair menggunakan ScreenGui agar 100% Support Delta
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "XdanikyMobileUI"
+ScreenGui.Parent = game:GetService("CoreGui")
+ScreenGui.IgnoreGuiInset = true
 
--- Garis Crosshair (Horizontal & Vertical)
-local CrossH = Drawing.new("Line")
-CrossH.Thickness = 2
+-- FOV Circle Frame (Alternatif Drawing Circle di Mobile)
+local FOVFrame = Instance.new("Frame")
+FOVFrame.Name = "FOVCircle"
+FOVFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+FOVFrame.BackgroundTransparency = 1
+FOVFrame.Visible = false
+FOVFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(1, 0)
+UICorner.Parent = FOVFrame
+
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Color = Color3.fromRGB(255, 255, 255)
+UIStroke.Thickness = 2
+UIStroke.Parent = FOVFrame
+
+-- Crosshair GUI Mobile
+local CrossH = Instance.new("Frame")
+CrossH.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+CrossH.AnchorPoint = Vector2.new(0.5, 0.5)
 CrossH.Visible = false
+CrossH.Parent = ScreenGui
 
-local CrossV = Drawing.new("Line")
-CrossV.Thickness = 2
+local CrossV = Instance.new("Frame")
+CrossV.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+CrossV.AnchorPoint = Vector2.new(0.5, 0.5)
 CrossV.Visible = false
+CrossV.Parent = ScreenGui
 
--- Sistem Manajemen Drawing Text ESP per Player
-local drawingCache = {}
+-- Fungsi Setup Billboard ESP Khusus Karakter Mobile
+local function setupBillboardESP(player, char)
+    if player == LocalPlayer then return end
+    local head = char:WaitForChild("Head", 5)
+    if not head then return end
 
-local function removeDrawingESP(player)
-    if drawingCache[player] then
-        drawingCache[player]:Remove()
-        drawingCache[player] = nil
+    -- 1. Chams
+    local hl = char:FindFirstChild("DW_Highlight")
+    if not hl then
+        hl = Instance.new("Highlight")
+        hl.Name = "DW_Highlight"
+        hl.Adornee = char
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.Parent = char
+    end
+
+    -- 2. Mobile Name + Distance BillboardGui
+    local bg = char:FindFirstChild("DW_MobileESP")
+    if not bg then
+        bg = Instance.new("BillboardGui")
+        bg.Name = "DW_MobileESP"
+        bg.Size = UDim2.new(0, 200, 0, 50)
+        bg.StudsOffset = Vector3.new(0, 3, 0)
+        bg.AlwaysOnBack = true
+        bg.Adornee = head
+        
+        local txt = Instance.new("TextLabel")
+        txt.Name = "Label"
+        txt.Size = UDim2.new(1, 0, 1, 0)
+        txt.BackgroundTransparency = 1
+        txt.TextColor3 = Color3.fromRGB(255, 255, 255)
+        txt.TextScaled = true
+        txt.Font = Enum.Font.SourceSansBold
+        txt.TextStrokeTransparency = 0
+        txt.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        txt.Parent = bg
+        
+        bg.Parent = char
     end
 end
 
-Players.PlayerRemoving:Connect(removeDrawingESP)
+local function onPlayerAdded(player)
+    player.CharacterAdded:Connect(function(char)
+        task.wait(0.5)
+        setupBillboardESP(player, char)
+    end)
+    if player.Character then
+        task.spawn(function()
+            setupBillboardESP(player, player.Character)
+        end)
+    end
+end
 
--- Loop Utama RenderStepped (Update Visual, Crosshair, & Aimbot)
+Players.PlayerAdded:Connect(onPlayerAdded)
+for _, p in ipairs(Players:GetPlayers()) do
+    onPlayerAdded(p)
+end
+
+-- Loop Utama RenderStepped
 RunService.RenderStepped:Connect(function()
     local mousePos = UserInputService:GetMouseLocation()
     
-    -- Update FOV Circle
-    FOVCircle.Position = mousePos
-    FOVCircle.Radius = Config.FOVSize
-    FOVCircle.Visible = Config.Aimbot and Config.FOV
+    -- Update FOV Frame
+    if Config.Aimbot and Config.FOV then
+        FOVFrame.Visible = true
+        FOVFrame.Position = UDim2.new(0, mousePos.X, 0, mousePos.Y)
+        local size = Config.FOVSize * 2
+        FOVFrame.Size = UDim2.new(0, size, 0, size)
+    else
+        FOVFrame.Visible = false
+    end
 
-    -- Update Custom Crosshair (di tengah layar)
+    -- Update Custom Crosshair Mobile
     if Config.Crosshair then
         local vpSize = Camera.ViewportSize
-        local center = Vector2.new(vpSize.X / 2, vpSize.Y / 2)
-        local size = Config.CrosshairSize
+        local cx, cy = vpSize.X / 2, vpSize.Y / 2
+        local s = Config.CrosshairSize
 
-        CrossH.From = Vector2.new(center.X - size, center.Y)
-        CrossH.To = Vector2.new(center.X + size, center.Y)
-        CrossH.Color = Config.CrosshairColor
         CrossH.Visible = true
+        CrossH.Position = UDim2.new(0, cx, 0, cy)
+        CrossH.Size = UDim2.new(0, s * 2, 0, 2)
+        CrossH.BackgroundColor3 = Config.CrosshairColor
 
-        CrossV.From = Vector2.new(center.X, center.Y - size)
-        CrossV.To = Vector2.new(center.X, center.Y + size)
-        CrossV.Color = Config.CrosshairColor
         CrossV.Visible = true
+        CrossV.Position = UDim2.new(0, cx, 0, cy)
+        CrossV.Size = UDim2.new(0, 2, 0, s * 2)
+        CrossV.BackgroundColor3 = Config.CrosshairColor
     else
         CrossH.Visible = false
         CrossV.Visible = false
@@ -248,65 +317,49 @@ RunService.RenderStepped:Connect(function()
     local localChar = LocalPlayer.Character
     local localHRP = localChar and localChar:FindFirstChild("HumanoidRootPart")
 
+    -- Update Player Visuals (Chams & ESP)
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
             local char = player.Character
-            if char and char:FindFirstChild("Head") and char:FindFirstChild("HumanoidRootPart") then
-                -- 1. Chams Logic
+            if char then
                 local hl = char:FindFirstChild("DW_Highlight")
-                if Config.Chams then
-                    if not hl then
-                        hl = Instance.new("Highlight")
-                        hl.Name = "DW_Highlight"
-                        hl.Adornee = char
-                        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                        hl.Parent = char
-                    end
-                    if isRealEnemy(player) then
-                        hl.FillColor = Config.EnemyColor
-                        hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                local bg = char:FindFirstChild("DW_MobileESP")
+
+                -- Chams Update
+                if hl then
+                    if Config.Chams then
+                        if isRealEnemy(player) then
+                            hl.FillColor = Config.EnemyColor
+                            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                        else
+                            hl.FillColor = Config.TeamColor
+                            hl.OutlineColor = Color3.fromRGB(0, 0, 0)
+                        end
+                        hl.Enabled = true
                     else
-                        hl.FillColor = Config.TeamColor
-                        hl.OutlineColor = Color3.fromRGB(0, 0, 0)
+                        hl.Enabled = false
                     end
-                    hl.Enabled = true
-                else
-                    if hl then hl.Enabled = false end
                 end
 
-                -- 2. Drawing Text Name + Distance ESP
-                local textObj = drawingCache[player]
-                if Config.DrawingESP and isRealEnemy(player) then
-                    if not textObj then
-                        textObj = Drawing.new("Text")
-                        textObj.Size = 16
-                        textObj.Center = true
-                        textObj.Outline = true
-                        textObj.Color = Color3.fromRGB(255, 255, 255)
-                        drawingCache[player] = textObj
-                    end
-
-                    local headPos, onScreen = Camera:WorldToViewportPoint(char.Head.Position + Vector3.new(0, 0.8, 0))
-                    if onScreen then
-                        local dist = localHRP and math.floor((char.HumanoidRootPart.Position - localHRP.Position).Magnitude) or 0
-                        textObj.Text = player.Name .. " [" .. dist .. "m]"
-                        textObj.Position = Vector2.new(headPos.X, headPos.Y)
-                        textObj.Visible = true
+                -- ESP Billboard Update
+                if bg and bg:FindFirstChild("Label") then
+                    if Config.BillboardESP and isRealEnemy(player) then
+                        if localHRP and char:FindFirstChild("HumanoidRootPart") then
+                            local dist = math.floor((char.HumanoidRootPart.Position - localHRP.Position).Magnitude)
+                            bg.Label.Text = player.Name .. " [" .. dist .. "m]"
+                        else
+                            bg.Label.Text = player.Name
+                        end
+                        bg.Enabled = true
                     else
-                        textObj.Visible = false
-                    end
-                else
-                    if textObj then
-                        textObj.Visible = false
+                        bg.Enabled = false
                     end
                 end
-            else
-                removeDrawingESP(player)
             end
         end
     end
 
-    -- 3. Aimbot Toggle Logic dengan Target Selector & Wall Check
+    -- Aimbot Logic Mobile
     if Config.Aimbot then
         local closestTarget = nil
         local shortestDist = Config.FOVSize
@@ -314,7 +367,6 @@ RunService.RenderStepped:Connect(function()
         for _, player in ipairs(Players:GetPlayers()) do
             if isRealEnemy(player) and player.Character then
                 local char = player.Character
-                -- Jika toggle "Target ke Kepala" aktif ->incar Head, jika off -> incar HumanoidRootPart (Badan)
                 local targetPart = Config.AimHead and char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
                 
                 if targetPart then
@@ -362,13 +414,8 @@ task.spawn(function()
 end)
 
 script.Destroying:Connect(function()
-    FOVCircle:Remove()
-    CrossH:Remove()
-    CrossV:Remove()
-    for _, textObj in pairs(drawingCache) do
-        textObj:Remove()
-    end
+    ScreenGui:Destroy()
 end)
 
 Rayfield:LoadConfiguration()
-print("Xdaniky Hub Loaded Successfully!")
+print("Xdaniky Hub Mobile Optimized Loaded Successfully!")
