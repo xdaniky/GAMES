@@ -1,0 +1,374 @@
+-- ==========================================
+-- XDANIKY HUB : ULTIMATE DESERT WAR SCRIPT
+-- ==========================================
+
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- Mendeteksi nama game secara otomatis
+local MarketplaceService = game:GetService("MarketplaceService")
+local success, gameInfo = pcall(function()
+    return MarketplaceService:GetProductInfo(game.PlaceId)
+end)
+local gameName = success and gameInfo.Name or "Roblox Game"
+
+local Window = Rayfield:CreateWindow({
+    Name = "Xdaniky Hub | " .. gameName,
+    LoadingTitle = "Memuat Xdaniky Hub...",
+    LoadingSubtitle = "Universal Script Engine",
+    ConfigurationSaving = { Enabled = false },
+    KeySystem = false,
+})
+
+-- Konfigurasi Pengaturan
+local Config = {
+    Chams = false,
+    DrawingESP = false,
+    Crosshair = false,
+    CrosshairColor = Color3.fromRGB(255, 255, 255),
+    CrosshairSize = 6,
+    NoRecoil = false,
+    Aimbot = false,
+    AimHead = true,   -- True = Target ke Kepala, False = Target ke Badan
+    WallCheck = true, -- True = Hanya musuh terbuka (tidak tembus tembok)
+    FOV = true,
+    FOVSize = 150,
+    TeamColor = Color3.fromRGB(0, 255, 0),
+    EnemyColor = Color3.fromRGB(255, 0, 0)
+}
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Camera = workspace.CurrentCamera
+
+-- Tab Menu
+local VisualTab = Window:CreateTab("Visuals", 4483362458)
+local CrosshairTab = Window:CreateTab("Crosshair", 4483362458)
+local CombatTab = Window:CreateTab("Combat", 4483362458)
+
+-- ==========================================
+-- 1. VISUALS TAB (Chams & Drawing ESP)
+-- ==========================================
+VisualTab:CreateSection("Player Visuals & ESP")
+
+VisualTab:CreateToggle({
+    Name = "Chams (Highlight Player)",
+    CurrentValue = false,
+    Callback = function(v) Config.Chams = v end,
+})
+
+VisualTab:CreateToggle({
+    Name = "Show Name + Distance (Drawing ESP)",
+    CurrentValue = false,
+    Callback = function(v) Config.DrawingESP = v end,
+})
+
+VisualTab:CreateColorPicker({
+    Name = "Warna Tim Sendiri",
+    Color = Color3.fromRGB(0, 255, 0),
+    Callback = function(v) Config.TeamColor = v end
+})
+
+VisualTab:CreateColorPicker({
+    Name = "Warna Tim Musuh",
+    Color = Color3.fromRGB(255, 0, 0),
+    Callback = function(v) Config.EnemyColor = v end
+})
+
+-- ==========================================
+-- 2. CROSSHAIR TAB (Menu Khusus Crosshair)
+-- ==========================================
+CrosshairTab:CreateSection("Custom Crosshair Settings")
+
+CrosshairTab:CreateToggle({
+    Name = "Aktifkan Custom Crosshair",
+    CurrentValue = false,
+    Callback = function(v) Config.Crosshair = v end,
+})
+
+CrosshairTab:CreateColorPicker({
+    Name = "Warna Crosshair",
+    Color = Color3.fromRGB(255, 255, 255),
+    Callback = function(v) Config.CrosshairColor = v end
+})
+
+CrosshairTab:CreateSlider({
+    Name = "Ukuran Crosshair",
+    Range = {2, 20},
+    Increment = 1,
+    CurrentValue = 6,
+    Callback = function(v) Config.CrosshairSize = v end,
+})
+
+-- ==========================================
+-- 3. COMBAT TAB (No Recoil, Aimbot, Target & WallCheck)
+-- ==========================================
+CombatTab:CreateSection("Weapon Modifications")
+
+CombatTab:CreateToggle({
+    Name = "No Recoil (ACS Engine Bypass)",
+    CurrentValue = false,
+    Callback = function(v) Config.NoRecoil = v end,
+})
+
+CombatTab:CreateSection("Aimbot Settings")
+
+CombatTab:CreateToggle({
+    Name = "Aimbot (Toggle On/Off)",
+    CurrentValue = false,
+    Callback = function(v) Config.Aimbot = v end,
+})
+
+CombatTab:CreateToggle({
+    Name = "Target ke Kepala (Head)",
+    CurrentValue = true,
+    Callback = function(v) Config.AimHead = v end,
+})
+
+CombatTab:CreateToggle({
+    Name = "Wall Check (Anti Tembok)",
+    CurrentValue = true,
+    Callback = function(v) Config.WallCheck = v end,
+})
+
+CombatTab:CreateToggle({
+    Name = "Tampilkan FOV Circle",
+    CurrentValue = true,
+    Callback = function(v) Config.FOV = v end,
+})
+
+CombatTab:CreateSlider({
+    Name = "Ukuran Radius FOV",
+    Range = {50, 400},
+    Increment = 5,
+    CurrentValue = 150,
+    Callback = function(v) Config.FOVSize = v end,
+})
+
+-- Fungsi Deteksi Musuh Universal
+local function isRealEnemy(player)
+    if player == LocalPlayer then return false end
+    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return false end
+    
+    if LocalPlayer.Team and player.Team then
+        return player.Team.Name ~= LocalPlayer.Team.Name
+    end
+    return true
+end
+
+-- Fungsi Cek Apakah Target Terhalang Tembok (Wall Check)
+local function isVisible(targetPart, char)
+    if not Config.WallCheck then return true end
+    
+    local origin = Camera.CFrame.Position
+    local direction = (targetPart.Position - origin)
+    
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+    
+    local ignoreList = {LocalPlayer.Character, char}
+    if LocalPlayer.Character then
+        table.insert(ignoreList, LocalPlayer.Character)
+    end
+    raycastParams.FilterDescendantsInstances = ignoreList
+    raycastParams.IgnoreWater = true
+    
+    local result = workspace:Raycast(origin, direction, raycastParams)
+    
+    if not result then return true end
+    if result.Instance:IsDescendantOf(char) then return true end
+    
+    return false
+end
+
+-- Setup Lingkaran FOV & Crosshair Drawing
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Visible = false
+FOVCircle.Thickness = 2
+FOVCircle.NumSides = 64
+FOVCircle.Filled = false
+FOVCircle.Transparency = 0.7
+FOVCircle.Color = Color3.fromRGB(255, 255, 255)
+
+-- Garis Crosshair (Horizontal & Vertical)
+local CrossH = Drawing.new("Line")
+CrossH.Thickness = 2
+CrossH.Visible = false
+
+local CrossV = Drawing.new("Line")
+CrossV.Thickness = 2
+CrossV.Visible = false
+
+-- Sistem Manajemen Drawing Text ESP per Player
+local drawingCache = {}
+
+local function removeDrawingESP(player)
+    if drawingCache[player] then
+        drawingCache[player]:Remove()
+        drawingCache[player] = nil
+    end
+end
+
+Players.PlayerRemoving:Connect(removeDrawingESP)
+
+-- Loop Utama RenderStepped (Update Visual, Crosshair, & Aimbot)
+RunService.RenderStepped:Connect(function()
+    local mousePos = UserInputService:GetMouseLocation()
+    
+    -- Update FOV Circle
+    FOVCircle.Position = mousePos
+    FOVCircle.Radius = Config.FOVSize
+    FOVCircle.Visible = Config.Aimbot and Config.FOV
+
+    -- Update Custom Crosshair (di tengah layar)
+    if Config.Crosshair then
+        local vpSize = Camera.ViewportSize
+        local center = Vector2.new(vpSize.X / 2, vpSize.Y / 2)
+        local size = Config.CrosshairSize
+
+        CrossH.From = Vector2.new(center.X - size, center.Y)
+        CrossH.To = Vector2.new(center.X + size, center.Y)
+        CrossH.Color = Config.CrosshairColor
+        CrossH.Visible = true
+
+        CrossV.From = Vector2.new(center.X, center.Y - size)
+        CrossV.To = Vector2.new(center.X, center.Y + size)
+        CrossV.Color = Config.CrosshairColor
+        CrossV.Visible = true
+    else
+        CrossH.Visible = false
+        CrossV.Visible = false
+    end
+
+    local localChar = LocalPlayer.Character
+    local localHRP = localChar and localChar:FindFirstChild("HumanoidRootPart")
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local char = player.Character
+            if char and char:FindFirstChild("Head") and char:FindFirstChild("HumanoidRootPart") then
+                -- 1. Chams Logic
+                local hl = char:FindFirstChild("DW_Highlight")
+                if Config.Chams then
+                    if not hl then
+                        hl = Instance.new("Highlight")
+                        hl.Name = "DW_Highlight"
+                        hl.Adornee = char
+                        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                        hl.Parent = char
+                    end
+                    if isRealEnemy(player) then
+                        hl.FillColor = Config.EnemyColor
+                        hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    else
+                        hl.FillColor = Config.TeamColor
+                        hl.OutlineColor = Color3.fromRGB(0, 0, 0)
+                    end
+                    hl.Enabled = true
+                else
+                    if hl then hl.Enabled = false end
+                end
+
+                -- 2. Drawing Text Name + Distance ESP
+                local textObj = drawingCache[player]
+                if Config.DrawingESP and isRealEnemy(player) then
+                    if not textObj then
+                        textObj = Drawing.new("Text")
+                        textObj.Size = 16
+                        textObj.Center = true
+                        textObj.Outline = true
+                        textObj.Color = Color3.fromRGB(255, 255, 255)
+                        drawingCache[player] = textObj
+                    end
+
+                    local headPos, onScreen = Camera:WorldToViewportPoint(char.Head.Position + Vector3.new(0, 0.8, 0))
+                    if onScreen then
+                        local dist = localHRP and math.floor((char.HumanoidRootPart.Position - localHRP.Position).Magnitude) or 0
+                        textObj.Text = player.Name .. " [" .. dist .. "m]"
+                        textObj.Position = Vector2.new(headPos.X, headPos.Y)
+                        textObj.Visible = true
+                    else
+                        textObj.Visible = false
+                    end
+                else
+                    if textObj then
+                        textObj.Visible = false
+                    end
+                end
+            else
+                removeDrawingESP(player)
+            end
+        end
+    end
+
+    -- 3. Aimbot Toggle Logic dengan Target Selector & Wall Check
+    if Config.Aimbot then
+        local closestTarget = nil
+        local shortestDist = Config.FOVSize
+
+        for _, player in ipairs(Players:GetPlayers()) do
+            if isRealEnemy(player) and player.Character then
+                local char = player.Character
+                -- Jika toggle "Target ke Kepala" aktif ->incar Head, jika off -> incar HumanoidRootPart (Badan)
+                local targetPart = Config.AimHead and char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
+                
+                if targetPart then
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    if hum and hum.Health > 0 and isVisible(targetPart, char) then
+                        local screenPoint, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
+                        if onScreen then
+                            local screenDist = (Vector2.new(screenPoint.X, screenPoint.Y) - mousePos).Magnitude
+                            if screenDist < shortestDist then
+                                shortestDist = screenDist
+                                closestTarget = targetPart
+                            end
+                        end
+                    end
+                end
+            end
+        end
+
+        if closestTarget then
+            Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, closestTarget.Position), 0.3)
+        end
+    end
+end)
+
+-- Modul No Recoil ACS Engine
+task.spawn(function()
+    while task.wait(0.5) do
+        if Config.NoRecoil then
+            pcall(function()
+                for _, v in ipairs(getgc(true)) do
+                    if type(v) == "table" and rawget(v, "camRecoil") then
+                        v.camRecoil.camRecoilUp = {0, 0}
+                        v.camRecoil.camRecoilLeft = {0, 0}
+                        v.camRecoil.camRecoilRight = {0, 0}
+                        v.camRecoil.camRecoilTilt = {0, 0}
+                        v.gunRecoil.gunRecoilUp = {0, 0}
+                        v.gunRecoil.gunRecoilLeft = {0, 0}
+                        v.gunRecoil.gunRecoilRight = {0, 0}
+                        v.gunRecoil.gunRecoilTilt = {0, 0}
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+script.Destroying:Connect(function()
+    FOVCircle:Remove()
+    CrossH:Remove()
+    CrossV:Remove()
+    for _, textObj in pairs(drawingCache) do
+        textObj:Remove()
+    end
+end)
+
+Rayfield:LoadConfiguration()
+print("Xdaniky Hub Loaded Successfully!")
